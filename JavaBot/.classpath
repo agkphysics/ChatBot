@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="tbSchema"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="D:/Users/Aaron/Documents/Uni Stuff/2016/Summer Scholarship/jCOLIBRI2/lib/commons/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="D:/Users/Aaron/Documents/Uni Stuff/2016/Summer Scholarship/jCOLIBRI2/lib/jcolibri2.jar" sourcepath="/jCOLIBRI2/src">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/D:/Users/Aaron/Documents/Uni%20Stuff/2016/Summer%20Scholarship/jCOLIBRI2/doc/api/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/Users/Aaron/Documents/Uni Stuff/2016/Summer Scholarship/jCOLIBRI2/lib/commons/log4j-1.2.14.jar"/>
+	<classpathentry kind="lib" path="D:/Programs/GATE_Developer_8.2/bin/gate.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
