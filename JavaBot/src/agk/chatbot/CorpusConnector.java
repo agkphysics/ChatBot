@@ -9,12 +9,15 @@ import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.*;
 
 import javax.xml.bind.JAXB;
 
 import jcolibri.cbrcore.*;
-import jcolibri.datatypes.Text;
 import jcolibri.exception.InitializingException;
+import jcolibri.extensions.textual.IE.common.StopWordsDetector;
+import jcolibri.extensions.textual.IE.common.TextStemmer;
+import jcolibri.extensions.textual.IE.opennlp.*;
 import talkbank.schema.*;
 
 /**
@@ -32,6 +35,7 @@ public class CorpusConnector implements Connector {
         System.out.println("Using corpus at " + pathToXmls.toAbsolutePath().normalize().toString());
         
         xmlFiles = new ArrayList<>();
+        
         try {
             Files.walkFileTree(pathToXmls, new FileVisitor<Path>() {
                 @Override
@@ -46,7 +50,7 @@ public class CorpusConnector implements Connector {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (attrs.isRegularFile() && file.getFileName().toString().endsWith("xml")) xmlFiles.add(file.toFile());
+                    if (attrs.isRegularFile() && file.getFileName().toString().endsWith(".xml")) xmlFiles.add(file.toFile());
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -63,6 +67,7 @@ public class CorpusConnector implements Connector {
     }
     
     /**
+     * Converts a CHAT object to a list of cases, which are response pairs.
      * 
      * @param ch the CHAT object to convert
      * @return the list of CBRCase objects composed of utterances as list of strings.
@@ -150,11 +155,14 @@ public class CorpusConnector implements Connector {
      */
     @Override
     public Collection<CBRCase> retrieveAllCases() {
-        // For now we just return the utterances from the first file we find
         Collection<CBRCase> coll = new ArrayList<>();
+        
         for (File file : xmlFiles) {
             CHAT ch = JAXB.unmarshal(file, CHAT.class);
-            if (ch.getLangs().size() == 1 && ch.getLangs().get(0).equals("eng")) coll.addAll(convertChatToCases(ch));
+            if (ch.getLangs().size() == 1 && ch.getLangs().get(0).equals("eng")) { // Only use chats with solely English language utterances
+                List<CBRCase> cases = convertChatToCases(ch);
+                coll.addAll(cases);
+            }
         }
         
         return coll;

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package agk.chatbot;
 
@@ -8,19 +8,22 @@ import jcolibri.exception.NoApplicableSimilarityFunctionException;
 import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
 
 /**
- * This similarity function computes the Levenshtein edit distance between two strings
- * 
- * @author Aaron Keesing
+ * @author Aaron
+ *
  */
-public class LevenshteinDistance implements LocalSimilarityFunction {
+public class HammingDistance implements LocalSimilarityFunction {
 
     /**
-     * 
+     *
      */
-    public LevenshteinDistance() {}
+    public HammingDistance() {}
 
-    /* (non-Javadoc)
-     * @see jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction#compute(java.lang.Object, java.lang.Object)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction#
+     * compute(java.lang.Object, java.lang.Object)
      */
     @Override
     public double compute(Object caseObject, Object queryObject) throws NoApplicableSimilarityFunctionException {
@@ -39,28 +42,24 @@ public class LevenshteinDistance implements LocalSimilarityFunction {
         
         if (caseString.length() == 0 || queryString.length() == 0) return 0.0;
         
-        // Use a matrix to compute the edit distance
-        int[][] M = new int[caseString.length()][queryString.length()];
-        char[] caseChars = caseString.toCharArray();
-        char[] queryChars = queryString.toCharArray();
+        int dist = 0;
+        int minLength = Math.min(caseString.length(), queryString.length());
+        int maxLength = Math.max(caseString.length(), queryString.length());
         
-        for (int i = 0; i < caseString.length(); i++) {
-            for (int j = 0; j < queryString.length(); j++) {
-                if (i == 0 || j == 0) M[i][j] = Math.max(i, j);
-                else {
-                    int same;
-                    if (caseChars[i] == queryChars[j]) same = 0;
-                    else same = 1;
-                    M[i][j] = Math.min(M[i-1][j-1] + same, Math.min(M[i-1][j] + 1, M[i][j-1] + 1));
-                }
-            }
+        for (int i = 0; i < minLength; i++) {
+            if (caseString.charAt(i) != queryString.charAt(i)) dist++;
         }
+        dist += maxLength - minLength;
         
-        return 1 - (double)M[caseString.length()-1][queryString.length()-1] / (double)Math.max(caseString.length(), queryString.length());
+        return 1 - (double)dist / (double)maxLength;
     }
 
-    /* (non-Javadoc)
-     * @see jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction#isApplicable(java.lang.Object, java.lang.Object)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction#
+     * isApplicable(java.lang.Object, java.lang.Object)
      */
     @Override
     public boolean isApplicable(Object caseObject, Object queryObject) {

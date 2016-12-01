@@ -7,10 +7,13 @@ import jcolibri.casebase.LinealCaseBase;
 import jcolibri.cbraplications.StandardCBRApplication;
 import jcolibri.cbrcore.*;
 import jcolibri.exception.ExecutionException;
+import jcolibri.extensions.textual.IE.common.*;
+import jcolibri.extensions.textual.IE.opennlp.*;
 import jcolibri.method.retrieve.RetrievalResult;
 import jcolibri.method.retrieve.NNretrieval.NNConfig;
 import jcolibri.method.retrieve.NNretrieval.NNScoringMethod;
 import jcolibri.method.retrieve.NNretrieval.similarity.global.Average;
+import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.LuceneTextSimilarity;
 import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.compressionbased.*;
 import jcolibri.method.retrieve.selection.SelectCases;
 
@@ -28,13 +31,14 @@ public class ChatBot implements StandardCBRApplication {
     private static Log logger = LogFactory.getLog(ChatBot.class);
     
     private Connector _connector;
-    private CBRCaseBase _caseBase;    
+    private CBRCaseBase _caseBase;
     private Path corpusPath;
 
     /**
      * @param args main arguments to application
      */
     public static void main(String[] args) {
+        
         Path pathToXmls;
         if (args.length == 2) pathToXmls = Paths.get(args[1]);
         else pathToXmls = Paths.get("../../TalkBank");
@@ -104,15 +108,20 @@ public class ChatBot implements StandardCBRApplication {
         
         NNConfig simConfig = new NNConfig();
         simConfig.setDescriptionSimFunction(new Average());
-        simConfig.addMapping(new Attribute("text", ChatResponse.class), new LevenshteinDistance());
-        //simConfig.addMapping(new Attribute("text", ChatResponse.class), new CompressionBased(new GZipCompressor()));
+        Attribute textAttribute = new Attribute("text", ChatResponse.class);
+        simConfig.addMapping(textAttribute, new HammingDistance());
+        //simConfig.addMapping(textAttribute, new CompressionBased(new GZipCompressor()));
         
         Collection<RetrievalResult> res = NNScoringMethod.evaluateSimilarity(_caseBase.getCases(), query, simConfig);
         res = SelectCases.selectTopKRR(res, 10);
         
-        //System.out.println("Found cases:");
-        //for (RetrievalResult r : res) System.out.println(r.get_case().toString() + " " + r.getEval());
-        System.out.println(res.iterator().next().get_case().getSolution().toString());
+        System.out.println("Found cases:");
+        for (RetrievalResult r : res) System.out.println(r.get_case().toString() + " " + r.getEval());
+        ChatResponse response = (ChatResponse)res.iterator().next().get_case().getSolution();
+        while (response == null || response.getText().toString().equals("")) {
+            response = (ChatResponse)res.iterator().next().get_case().getSolution();
+        }
+        System.out.println(response.toString());
     }
 
     /*
@@ -134,11 +143,20 @@ public class ChatBot implements StandardCBRApplication {
      */
     @Override
     public CBRCaseBase preCycle() throws ExecutionException {
+        long startTime = System.currentTimeMillis();
         _caseBase.init(_connector);
-        System.out.println("Generated " + _caseBase.getCases().size() + " English response pairs.");        
+        long finishTime = System.currentTimeMillis();
+        System.out.println("Generated " + _caseBase.getCases().size() + " English response pairs in " + (finishTime - startTime)/1000.0 + " seconds.");
+        
+//        Collection<CBRCase> coll = _caseBase.getCases();
+//        OpennlpSplitter.split(coll);
+//        StopWordsDetector.detectStopWords(coll);
+//        TextStemmer.stem(coll);
+//        OpennlpPOStagger.tag(coll);
+//        OpennlpMainNamesExtractor.extractMainNames(coll);
+        
         logger.debug("Finished preCycle()");
         System.out.println();
-        
         return _caseBase;
     }
 

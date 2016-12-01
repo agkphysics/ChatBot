@@ -6,10 +6,7 @@ package agk.chatbot;
 import jcolibri.cbrcore.Attribute;
 import jcolibri.cbrcore.CaseComponent;
 import jcolibri.datatypes.Text;
-import talkbank.schema.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import jcolibri.extensions.textual.IE.opennlp.IETextOpenNLP;
 
 /**
  * @author Aaron
@@ -18,26 +15,27 @@ import java.util.List;
 public class ChatResponse implements CaseComponent {
     
     String id;
-    Text text;
+    //Text text;
+    IETextOpenNLP text;
 
     /**
      * 
      */
     public ChatResponse() {
-        text = new Text();
+        text = new IETextOpenNLP();
     }
     
     /**
      * @return the text
      */
-    public Text getText() {
+    public IETextOpenNLP getText() {
         return text;
     }
 
     /**
      * @param text the text to set
      */
-    public void setText(Text text) {
+    public void setText(IETextOpenNLP text) {
         this.text = text;
     }
     
