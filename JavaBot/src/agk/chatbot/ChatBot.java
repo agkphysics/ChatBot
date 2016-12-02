@@ -109,7 +109,7 @@ public class ChatBot implements StandardCBRApplication {
         NNConfig simConfig = new NNConfig();
         simConfig.setDescriptionSimFunction(new Average());
         Attribute textAttribute = new Attribute("text", ChatResponse.class);
-        simConfig.addMapping(textAttribute, new HammingDistance());
+        simConfig.addMapping(textAttribute, new StringSimilarity("levenschtein"));
         //simConfig.addMapping(textAttribute, new CompressionBased(new GZipCompressor()));
         
         Collection<RetrievalResult> res = NNScoringMethod.evaluateSimilarity(_caseBase.getCases(), query, simConfig);

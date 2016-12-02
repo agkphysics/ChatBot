@@ -3,6 +3,7 @@
  */
 package agk.chatbot;
 
+import info.debatty.java.stringsimilarity.interfaces.NormalizedStringSimilarity;
 import jcolibri.datatypes.Text;
 import jcolibri.exception.NoApplicableSimilarityFunctionException;
 import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
@@ -11,10 +12,10 @@ import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
  * @author Aaron
  *
  */
-public class HammingDistance implements LocalSimilarityFunction {
+public class HammingDistance implements LocalSimilarityFunction, NormalizedStringSimilarity {
 
     /**
-     *
+     * 
      */
     public HammingDistance() {}
 
@@ -40,18 +41,7 @@ public class HammingDistance implements LocalSimilarityFunction {
         if (queryObject instanceof Text) queryString = ((Text)queryObject).toString();
         else queryString = (String)queryObject;
         
-        if (caseString.length() == 0 || queryString.length() == 0) return 0.0;
-        
-        int dist = 0;
-        int minLength = Math.min(caseString.length(), queryString.length());
-        int maxLength = Math.max(caseString.length(), queryString.length());
-        
-        for (int i = 0; i < minLength; i++) {
-            if (caseString.charAt(i) != queryString.charAt(i)) dist++;
-        }
-        dist += maxLength - minLength;
-        
-        return 1 - (double)dist / (double)maxLength;
+        return similarity(caseString, queryString);
     }
 
     /*
@@ -65,5 +55,21 @@ public class HammingDistance implements LocalSimilarityFunction {
     public boolean isApplicable(Object caseObject, Object queryObject) {
         return (caseObject instanceof String || caseObject instanceof Text) || (queryObject instanceof String || queryObject instanceof Text);
     }
+
+	@Override
+	public double similarity(String caseString, String queryString) {
+		if (caseString.length() == 0 || queryString.length() == 0) return 0.0;
+        
+        int dist = 0;
+        int minLength = Math.min(caseString.length(), queryString.length());
+        int maxLength = Math.max(caseString.length(), queryString.length());
+        
+        for (int i = 0; i < minLength; i++) {
+            if (caseString.charAt(i) != queryString.charAt(i)) dist++;
+        }
+        dist += maxLength - minLength;
+        
+        return 1 - (double)dist / (double)maxLength;
+	}
 
 }
