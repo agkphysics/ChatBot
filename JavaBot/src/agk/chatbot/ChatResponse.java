@@ -7,6 +7,7 @@ import jcolibri.cbrcore.Attribute;
 import jcolibri.cbrcore.CaseComponent;
 import jcolibri.datatypes.Text;
 import jcolibri.extensions.textual.IE.opennlp.IETextOpenNLP;
+import jcolibri.extensions.textual.IE.representation.IEText;
 
 /**
  * @author Aaron
@@ -15,27 +16,26 @@ import jcolibri.extensions.textual.IE.opennlp.IETextOpenNLP;
 public class ChatResponse implements CaseComponent {
     
     String id;
-    //Text text;
-    IETextOpenNLP text;
+    IEText text;
 
     /**
      * 
      */
     public ChatResponse() {
-        text = new IETextOpenNLP();
+        text = new IEText();
     }
     
     /**
      * @return the text
      */
-    public IETextOpenNLP getText() {
+    public IEText getText() {
         return text;
     }
 
     /**
      * @param text the text to set
      */
-    public void setText(IETextOpenNLP text) {
+    public void setText(IEText text) {
         this.text = text;
     }
     

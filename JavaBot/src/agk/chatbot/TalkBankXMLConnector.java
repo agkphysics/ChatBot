@@ -21,17 +21,19 @@ import jcolibri.extensions.textual.IE.opennlp.*;
 import talkbank.schema.*;
 
 /**
+ * This class implements the connector between the TalkBank corpus of XML files
+ * and the chat bot.
+ * 
  * @author Aaron
- *
  */
-public class CorpusConnector implements Connector {
+public class TalkBankXMLConnector implements Connector {
     
     private List<File> xmlFiles;
 
     /**
      *
      */
-    public CorpusConnector(Path pathToXmls) {
+    public TalkBankXMLConnector(Path pathToXmls) {
         System.out.println("Using corpus at " + pathToXmls.toAbsolutePath().normalize().toString());
         
         xmlFiles = new ArrayList<>();
@@ -72,7 +74,7 @@ public class CorpusConnector implements Connector {
      * @param ch the CHAT object to convert
      * @return the list of CBRCase objects composed of utterances as list of strings.
      */
-    public static List<CBRCase> convertChatToCases(CHAT ch) {
+    public static Collection<CBRCase> convertChatToCases(CHAT ch) {
         List<CBRCase> cases = new ArrayList<>();
         for (int i = 0; i < ch.getCommentsAndTcusAndBeginGems().size(); i++) {
             Object o = ch.getCommentsAndTcusAndBeginGems().get(i);
@@ -159,8 +161,11 @@ public class CorpusConnector implements Connector {
         
         for (File file : xmlFiles) {
             CHAT ch = JAXB.unmarshal(file, CHAT.class);
-            if (ch.getLangs().size() == 1 && ch.getLangs().get(0).equals("eng")) { // Only use chats with solely English language utterances
-                List<CBRCase> cases = convertChatToCases(ch);
+            if (ch.getLangs().size() == 1
+                    && ch.getLangs().get(0).equals("eng")
+                    && ch.getParticipants().getParticipants().size() > 1) {
+                // Only use chats with solely English language utterances and more than one speaker
+                Collection<CBRCase> cases = convertChatToCases(ch);
                 coll.addAll(cases);
             }
         }

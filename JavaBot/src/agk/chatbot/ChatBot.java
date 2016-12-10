@@ -13,6 +13,7 @@ import jcolibri.method.retrieve.RetrievalResult;
 import jcolibri.method.retrieve.NNretrieval.NNConfig;
 import jcolibri.method.retrieve.NNretrieval.NNScoringMethod;
 import jcolibri.method.retrieve.NNretrieval.similarity.global.Average;
+import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.CosineCoefficient;
 import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.LuceneTextSimilarity;
 import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.compressionbased.*;
 import jcolibri.method.retrieve.selection.SelectCases;
@@ -39,9 +40,14 @@ public class ChatBot implements StandardCBRApplication {
      */
     public static void main(String[] args) {
         
-        Path pathToXmls;
-        if (args.length == 2) pathToXmls = Paths.get(args[1]);
-        else pathToXmls = Paths.get("../../TalkBank");
+        Path pathToXmls = null;
+        try {
+	        if (args.length == 1) pathToXmls = Paths.get(args[0]);
+	        else pathToXmls = Paths.get("../../TalkBank");
+        } catch (InvalidPathException e) {
+        	System.err.println("Not a valid path.");
+        	System.exit(1);
+        }
         
         ChatBot bot = new ChatBot(pathToXmls);
         System.out.println();
@@ -88,7 +94,7 @@ public class ChatBot implements StandardCBRApplication {
      */
     @Override
     public void configure() throws ExecutionException {
-        _connector = new CorpusConnector(corpusPath);
+        _connector = new ProcessedXMLConnector(corpusPath);
         _caseBase = new LinealCaseBase();
         
         logger.debug("Finished configure()");
@@ -102,15 +108,11 @@ public class ChatBot implements StandardCBRApplication {
      * CBRQuery)
      */
     @Override
-    public void cycle(CBRQuery query) throws ExecutionException {
-        //System.out.println("Got query: " + query.toString());
-        //System.out.println();
-        
+    public void cycle(CBRQuery query) throws ExecutionException {        
         NNConfig simConfig = new NNConfig();
         simConfig.setDescriptionSimFunction(new Average());
         Attribute textAttribute = new Attribute("text", ChatResponse.class);
         simConfig.addMapping(textAttribute, new StringSimilarity("levenschtein"));
-        //simConfig.addMapping(textAttribute, new CompressionBased(new GZipCompressor()));
         
         Collection<RetrievalResult> res = NNScoringMethod.evaluateSimilarity(_caseBase.getCases(), query, simConfig);
         res = SelectCases.selectTopKRR(res, 10);
@@ -150,10 +152,13 @@ public class ChatBot implements StandardCBRApplication {
         
 //        Collection<CBRCase> coll = _caseBase.getCases();
 //        OpennlpSplitter.split(coll);
-//        StopWordsDetector.detectStopWords(coll);
+//        System.out.println("Split into tokens");
 //        TextStemmer.stem(coll);
+//        System.out.println("Stemmed");
 //        OpennlpPOStagger.tag(coll);
+//        System.out.println("POS tagged");
 //        OpennlpMainNamesExtractor.extractMainNames(coll);
+//        System.out.println("Extracted main names");
         
         logger.debug("Finished preCycle()");
         System.out.println();
