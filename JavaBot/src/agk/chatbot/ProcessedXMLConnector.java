@@ -9,6 +9,9 @@ import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.JAXB;
 import javax.xml.bind.annotation.*;
@@ -94,6 +97,7 @@ public class ProcessedXMLConnector implements Connector {
             for (Conversation.ResponsePair.Statement.Word w : pair.getStatement().getWord()) {
             	Token t = new Token(w.getValue());
             	t.setPostag(w.getTag());
+            	t.setStem(w.getStem());
             	tokens.add(t);
             	words.add(w.getValue());
             }
@@ -113,6 +117,7 @@ public class ProcessedXMLConnector implements Connector {
             for (Conversation.ResponsePair.Response.Word w : pair.getResponse().getWord()) {
             	Token t = new Token(w.getValue());
             	t.setPostag(w.getTag());
+            	t.setStem(w.getStem());
             	tokens.add(t);
             	words.add(w.getValue());
             }
@@ -166,12 +171,28 @@ public class ProcessedXMLConnector implements Connector {
      */
     @Override
     public Collection<CBRCase> retrieveAllCases() {
-        Collection<CBRCase> coll = new ArrayList<>();
+        Collection<CBRCase> coll = Collections.synchronizedCollection(new ArrayList<>());
+        
+        ExecutorService executor = Executors.newWorkStealingPool();
         
         for (File file : xmlFiles) {
-            Conversation con = JAXB.unmarshal(file, Conversation.class);
-            coll.addAll(convertConversationToCases(con));
+        	executor.submit(new Runnable() {
+				@Override
+				public void run() {
+					Conversation con = JAXB.unmarshal(file, Conversation.class);
+					coll.addAll(convertConversationToCases(con));
+				}
+			});
+//            Conversation con = JAXB.unmarshal(file, Conversation.class);
+//            coll.addAll(convertConversationToCases(con));
         }
+        
+        executor.shutdown();
+        try {
+			executor.awaitTermination(30, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
         
         return coll;
     }

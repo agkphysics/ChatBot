@@ -1,4 +1,3 @@
-##
 ## processXML.py - Script for processing the XMLs from the talkbank corpus
 ##
 ## You'll need to run the script with the -t option first to train the tagger
@@ -6,8 +5,6 @@
 ## 
 ## Version: 1.5
 ## Author: Aaron Keesing
-##
-
 
 
 #pylint: skip-file
@@ -15,7 +12,7 @@
 import xmltodict
 import nltk, nltk.corpus
 from nltk.parse.stanford import StanfordParser
-from nltk.tag.stanford import StanfordPOSTagger, StanfordNERTagger
+from nltk.tag.stanford import StanfordPOSTagger
 import os.path
 import os
 from itertools import groupby, zip_longest, cycle, islice
@@ -79,16 +76,25 @@ def processFile(file):
         # Join contiguous responses from identical speakers
         groupedUtters = [(k, ' '.join([x[1] for x in g])) for k, g in groupby(utters, itemgetter(0))]
 
-        # Set up Stanford POS tagger
-        #stTagger = StanfordPOSTagger('english-left3words-distsim.tagger')
-        stTagger = StanfordPOSTagger('gate-EN-twitter.model')
-
+        # Set up Stanford Parser
+        stParser = StanfordParser()
+        
+        stemmer = nltk.stem.snowball.EnglishStemmer()
+        
         tokenizedUtters = [nltk.word_tokenize(utter) for (who, utter) in groupedUtters]
-        #taggedUtters = stTagger.tag_sents(tokenizedUtters)
-        #taggedUtters = [tagger.tag(utter) for utter in tokenizedUtters]
         taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
+
+        stemmedUtters = []
+        for utter in taggedUtters:
+            stemmedUtter = []
+            for (w, t) in utter:
+                stemmedUtter.append((w, t, stemmer.stem(w)))
+            stemmedUtters.append(stemmedUtter)
+        
+        #parseTree = stParser.parse_sents(tokenizedUtters)
+
         neTags = nltk.ne_chunk_sents(taggedUtters)
-        chunkedUtters = [chunker.parse(utter) for utter in taggedUtters]
+        chunkedUtters = chunker.parse_sents(taggedUtters)
         
 
         if DEBUG:
@@ -105,6 +111,12 @@ def processFile(file):
             print('...')
 
             print()
+            print('Chunks:')
+            for utter in islice(chunkedUtters, 10):
+                print(utter)
+            print('...')
+
+            print()
             print('NE tags:')
             for utter in islice(neTags, 10):
                 print(utter)
@@ -116,14 +128,14 @@ def processFile(file):
                 'ResponsePair': []
             }
         }
-        pairs = zip(taggedUtters, taggedUtters[1:])
+        pairs = zip(stemmedUtters, stemmedUtters[1:])
         for (u1, u2) in pairs:
             stmt = {'word': []}
             resp = {'word': []}
             for t in u1:
-                stmt['word'].append({'@tag': t[1], '#text': t[0]})
+                stmt['word'].append({'@tag': t[1], '#text': t[0], '@stem': t[2]})
             for t in u2:
-                resp['word'].append({'@tag': t[1], '#text': t[0]})
+                resp['word'].append({'@tag': t[1], '#text': t[0], '@stem': t[2]})
             responsepair = {'statement': stmt, 'response': resp}
             tree['conversation']['ResponsePair'].append(responsepair)
         
@@ -226,7 +238,11 @@ if os.path.isdir(infile):
     files = [str(p) for p in Path(infile).glob('**/*.xml')]
     # Do tree concurrently
     from concurrent.futures import ProcessPoolExecutor
-    with ProcessPoolExecutor() as executor:
-        executor.map(processFile, files)
+    try:
+        with ProcessPoolExecutor() as executor:
+            executor.map(processFile, files)
+    except:
+        for f in files:
+            processFile(f)
 else:
     processFile(infile)
