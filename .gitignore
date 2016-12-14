@@ -1,4 +1,5 @@
 bin/
 *.class
 obj/
-JavaBot/opennlp-models
+/JavaBot/opennlp-models
+/JavaBot/lib
