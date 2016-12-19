@@ -14,6 +14,8 @@ import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
  */
 public class HammingDistance implements LocalSimilarityFunction, NormalizedStringSimilarity {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * 
      */
