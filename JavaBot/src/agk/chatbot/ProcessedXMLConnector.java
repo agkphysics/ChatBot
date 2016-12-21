@@ -13,19 +13,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.xml.bind.JAXB;
-import javax.xml.bind.annotation.*;
+import javax.xml.parsers.*;
 
-import com.hp.hpl.jena.query.function.library.trace;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
-import agk.chatbot.schema.Conversation;
 import jcolibri.cbrcore.*;
 import jcolibri.exception.InitializingException;
 import jcolibri.extensions.textual.IE.representation.IEText;
 import jcolibri.extensions.textual.IE.representation.Paragraph;
 import jcolibri.extensions.textual.IE.representation.Sentence;
 import jcolibri.extensions.textual.IE.representation.Token;
-import talkbank.schema.CHAT;
 
 /**
  * This class implements the connector between the processed chat corpus and the
@@ -75,65 +73,87 @@ public class ProcessedXMLConnector implements Connector {
         System.out.println("Found " + xmlFiles.size() + " processed xml files.");
     }
     
-    public static Collection<CBRCase> convertConversationToCases(Conversation con) {
+    public static Collection<CBRCase> convertFileToCases(File file) {
         List<CBRCase> cases = new ArrayList<>();
-        for (Conversation.ResponsePair pair : con.getResponsePair()) {
-            ChatResponse stmt = new ChatResponse();
-            ChatResponse resp = new ChatResponse();
-            CBRCase c = new CBRCase();
+        try {
+            DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = dBuilder.parse(file);
+            Element root = doc.getDocumentElement();
+            NodeList pairs = doc.getElementsByTagName("ResponsePair");
             
-            stmt.setId(con.getId());
-            resp.setId(con.getId());
-            
-            IEText txt;
-            String utterance;
-            Sentence sent;
-            Paragraph para;
-            
-            List<Token> tokens = new ArrayList<>();
-            List<String> words = new ArrayList<>();
-            
-            // Convert statement
-            for (Conversation.ResponsePair.Statement.Word w : pair.getStatement().getWord()) {
-            	Token t = new Token(w.getValue());
-            	t.setPostag(w.getTag());
-            	t.setStem(w.getStem());
-            	tokens.add(t);
-            	words.add(w.getValue());
+            for (int i = 0; i < pairs.getLength(); i++) {
+                Element pair = (Element)pairs.item(i);
+                
+                ChatResponse stmt = new ChatResponse();
+                ChatResponse resp = new ChatResponse();
+                CBRCase c = new CBRCase();
+                
+                stmt.setId(root.getAttribute("id"));
+                resp.setId(root.getAttribute("id"));
+                
+                IEText txt;
+                String utterance;
+                Sentence sent;
+                Paragraph para;
+                
+                List<Token> tokens = new ArrayList<>();
+                List<String> words = new ArrayList<>();
+                
+                Element statement = (Element)pair.getElementsByTagName("statement").item(0);
+                NodeList toks = statement.getElementsByTagName("word");
+                // Convert statement
+                for (int j = 0; j < toks.getLength(); j++) {
+                    Element w = (Element)toks.item(j);
+                    String pos = w.getAttribute("tag");
+                    String stem = w.getAttribute("stem");
+                	Token t = new Token(w.getTextContent());
+                	t.setPostag(pos);
+                	t.setStem(stem);
+                	tokens.add(t);
+                	words.add(w.getTextContent());
+                }
+                utterance = String.join(" ", words);
+                sent = new Sentence(utterance);
+                para = new Paragraph(utterance);
+                txt = new IEText(utterance);
+                sent.addTokens(tokens);
+                para.addSentence(sent);
+                txt.addParagraph(para);
+                stmt.setText(txt);            
+                
+                tokens.clear();
+                words.clear();
+                
+                Element response = (Element)pair.getElementsByTagName("response").item(0);
+                toks = response.getElementsByTagName("word");
+                // Convert response
+                for (int j = 0; j < toks.getLength(); j++) {
+                    Element w = (Element)toks.item(j);
+                    String pos = w.getAttribute("tag");
+                    String stem = w.getAttribute("stem");
+                    Token t = new Token(w.getTextContent());
+                    t.setPostag(pos);
+                    t.setStem(stem);
+                    tokens.add(t);
+                    words.add(w.getTextContent());
+                }
+                utterance = String.join(" ", words);
+                sent = new Sentence(utterance);
+                para = new Paragraph(utterance);
+                txt = new IEText(utterance);
+                sent.addTokens(tokens);
+                para.addSentence(sent);
+                txt.addParagraph(para);
+                resp.setText(txt);
+                
+                c.setDescription(stmt);
+                c.setSolution(resp);
+                cases.add(c);
             }
-            utterance = String.join(" ", words);
-            sent = new Sentence(utterance);
-            para = new Paragraph(utterance);
-            txt = new IEText(utterance);
-            sent.addTokens(tokens);
-            para.addSentence(sent);
-            txt.addParagraph(para);
-            stmt.setText(txt);            
-            
-            tokens.clear();
-            words.clear();
-            
-            // Convert response
-            for (Conversation.ResponsePair.Response.Word w : pair.getResponse().getWord()) {
-            	Token t = new Token(w.getValue());
-            	t.setPostag(w.getTag());
-            	t.setStem(w.getStem());
-            	tokens.add(t);
-            	words.add(w.getValue());
-            }
-            utterance = String.join(" ", words);
-            sent = new Sentence(utterance);
-            para = new Paragraph(utterance);
-            txt = new IEText(utterance);
-            sent.addTokens(tokens);
-            para.addSentence(sent);
-            txt.addParagraph(para);
-            resp.setText(txt);
-            
-            c.setDescription(stmt);
-            c.setSolution(resp);
-            cases.add(c);
+        } catch (DOMException | ParserConfigurationException | SAXException | IOException e) {
+            e.printStackTrace();
         }
+        
         return cases;
     }
     
@@ -179,17 +199,15 @@ public class ProcessedXMLConnector implements Connector {
         	executor.submit(new Runnable() {
 				@Override
 				public void run() {
-					Conversation con = JAXB.unmarshal(file, Conversation.class);
-					coll.addAll(convertConversationToCases(con));
+					coll.addAll(convertFileToCases(file));
 				}
 			});
-//            Conversation con = JAXB.unmarshal(file, Conversation.class);
-//            coll.addAll(convertConversationToCases(con));
+//            coll.addAll(convertFileToCases(file));
         }
         
         executor.shutdown();
         try {
-			executor.awaitTermination(30, TimeUnit.SECONDS);
+			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
