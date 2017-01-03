@@ -79,11 +79,9 @@ public class ProcessedXMLConnector implements Connector {
             DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = dBuilder.parse(file);
             Element root = doc.getDocumentElement();
-            NodeList pairs = doc.getElementsByTagName("ResponsePair");
+            NodeList utters = doc.getElementsByTagName("u");
             
-            for (int i = 0; i < pairs.getLength(); i++) {
-                Element pair = (Element)pairs.item(i);
-                
+            for (int i = 0; i < utters.getLength(); i++) {
                 ChatResponse stmt = new ChatResponse();
                 ChatResponse resp = new ChatResponse();
                 CBRCase c = new CBRCase();
@@ -99,16 +97,17 @@ public class ProcessedXMLConnector implements Connector {
                 List<Token> tokens = new ArrayList<>();
                 List<String> words = new ArrayList<>();
                 
-                Element statement = (Element)pair.getElementsByTagName("statement").item(0);
-                NodeList toks = statement.getElementsByTagName("word");
+                Element u = (Element)utters.item(i);
+                NodeList toks = u.getElementsByTagName("t");
                 // Convert statement
                 for (int j = 0; j < toks.getLength(); j++) {
                     Element w = (Element)toks.item(j);
-                    String pos = w.getAttribute("tag");
+                    String pos = w.getAttribute("pos");
                     String stem = w.getAttribute("stem");
                 	Token t = new Token(w.getTextContent());
                 	t.setPostag(pos);
                 	t.setStem(stem);
+                	t.setMainName(!w.getAttribute("ner").equals("O"));
                 	tokens.add(t);
                 	words.add(w.getTextContent());
                 }
@@ -124,16 +123,18 @@ public class ProcessedXMLConnector implements Connector {
                 tokens.clear();
                 words.clear();
                 
-                Element response = (Element)pair.getElementsByTagName("response").item(0);
-                toks = response.getElementsByTagName("word");
+                if (i + 1 == utters.getLength() - 1) break;
+                u = (Element)utters.item(i + 1);
+                toks = u.getElementsByTagName("t");
                 // Convert response
                 for (int j = 0; j < toks.getLength(); j++) {
                     Element w = (Element)toks.item(j);
-                    String pos = w.getAttribute("tag");
+                    String pos = w.getAttribute("pos");
                     String stem = w.getAttribute("stem");
                     Token t = new Token(w.getTextContent());
                     t.setPostag(pos);
                     t.setStem(stem);
+                    t.setMainName(!w.getAttribute("ner").equals("O"));
                     tokens.add(t);
                     words.add(w.getTextContent());
                 }

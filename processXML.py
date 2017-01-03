@@ -3,24 +3,21 @@
 ## You'll need to run the script with the -t option first to train the tagger
 ## and chunker, and store them serialised.
 ## 
-## Version: 1.5
+## Version: 1.7
 ## Author: Aaron Keesing
 
 
-#pylint: skip-file
-
 import xmltodict
 import nltk, nltk.corpus
-from nltk.parse.stanford import StanfordParser
-from nltk.tag.stanford import StanfordPOSTagger
+from pycorenlp import StanfordCoreNLP
 import os.path
 import os
-from itertools import groupby, zip_longest, cycle, islice
-from functools import reduce
+from itertools import groupby, islice, chain
 from operator import itemgetter
 from pathlib import Path
 import argparse
 import pickle
+import re
 
 
 # This class was copied from http://streamhacker.com/2009/02/23/chunk-extraction-with-nltk/
@@ -69,21 +66,24 @@ def processFile(file):
                             words.append(w['#text'])
                     else:
                         words.append(w)
-                words = [w for w in words if '-' not in w]
+                # Get rid of bad stuff in words
+                words = list(chain(*[w.split('_') for w in words]))
+                words = [re.sub(r'[^A-Za-z0-9,.?$%&;:\'"]', '', w) for w in words if '-' not in w and w.lower() not in {'um', 'uh'}]
                 if len(words) > 0:
                     utters.append((who, ' '.join(words)))
 
         # Join contiguous responses from identical speakers
-        groupedUtters = [(k, ' '.join([x[1] for x in g])) for k, g in groupby(utters, itemgetter(0))]
+        groupedUtters = [' '.join([x[1] for x in g]) for k, g in groupby(utters, itemgetter(0))]
 
-        # Set up Stanford Parser
-        stParser = StanfordParser()
+        # Set up Stanford Stuff
+        stserver = StanfordCoreNLP('http://localhost:9000/')
         
+        
+        tokenizedUtters = [nltk.word_tokenize(utter) for utter in groupedUtters]
+        #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
+        taggedUtters = tagger.tag_sents(tokenizedUtters)
+
         stemmer = nltk.stem.snowball.EnglishStemmer()
-        
-        tokenizedUtters = [nltk.word_tokenize(utter) for (who, utter) in groupedUtters]
-        taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
-
         stemmedUtters = []
         for utter in taggedUtters:
             stemmedUtter = []
@@ -91,12 +91,22 @@ def processFile(file):
                 stemmedUtter.append((w, t, stemmer.stem(w)))
             stemmedUtters.append(stemmedUtter)
         
-        #parseTree = stParser.parse_sents(tokenizedUtters)
-
-        neTags = nltk.ne_chunk_sents(taggedUtters)
-        chunkedUtters = chunker.parse_sents(taggedUtters)
-        
-
+        stanfordUtters = []
+        if STANFORD:
+            try:
+                for utter in groupedUtters:
+                    annot = stserver.annotate(utter, properties={
+                        'annotators': 'tokenize,ssplit,pos,ner,lemma',
+                        'pos.model': 'edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger',
+                        'ner.model': 'edu/stanford/nlp/models/ner/english.conll.4class.caseless.distsim.crf.ser.gz',
+                        'outputFormat': 'json'
+                    })
+                    stanfordUtters.append([(tok['word'], tok['pos'], tok['lemma'], tok['ner']) for tok in annot['sentences'][0]['tokens']])
+            except Exception:
+                print("Unable to connect to Stanford CoreNLP server. Make sure it is running at http://localhost:9000/")
+                print("You can start the server with the command: java -mx100m edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000")
+                exit()
+            
         if DEBUG:
             print()
             print('Utterances:')
@@ -106,38 +116,62 @@ def processFile(file):
 
             print()
             print('Alternating responses:')
-            for (who, utter) in groupedUtters[:20]:
-                print("{}: {}".format(who, utter))
+            for utter in groupedUtters[:20]:
+                print(utter)
+                print()
             print('...')
 
             print()
-            print('Chunks:')
-            for utter in islice(chunkedUtters, 10):
-                print(utter)
+            print('Tagged utterances:')
+            for utter in taggedUtters[:20]:
+                print(' '.join([nltk.tuple2str(tok) for tok in utter]))
+                print()
             print('...')
 
-            print()
-            print('NE tags:')
-            for utter in islice(neTags, 10):
-                print(utter)
-            print('...')
+            if STANFORD:
+                print()
+                print('Processed using stanford corenlp:')
+                for utter in stanfordUtters[:20]:
+                    print(utter)
+                    print()
+                print('...')
+
+        if CHUNK:
+            chunkedUtters = chunker.parse_sents(taggedUtters)
+            if DEBUG:
+                print()
+                print('Chunks:')
+                for utter in islice(chunkedUtters, 10):
+                    print(utter)
+                print('...')
+        
+        if NETAG:
+            neTags = nltk.ne_chunk_sents(taggedUtters)
+            if DEBUG:
+                print()
+                print('NE tags:')
+                for utter in islice(neTags, 10):
+                    print(utter)
+                print('...')
         
         tree = {
             'conversation': {
                 '@id': xmlDoc['CHAT']['@Id'],
-                'ResponsePair': []
+                'u': []
             }
         }
-        pairs = zip(stemmedUtters, stemmedUtters[1:])
-        for (u1, u2) in pairs:
-            stmt = {'word': []}
-            resp = {'word': []}
-            for t in u1:
-                stmt['word'].append({'@tag': t[1], '#text': t[0], '@stem': t[2]})
-            for t in u2:
-                resp['word'].append({'@tag': t[1], '#text': t[0], '@stem': t[2]})
-            responsepair = {'statement': stmt, 'response': resp}
-            tree['conversation']['ResponsePair'].append(responsepair)
+        if STANFORD:
+            pairs = stanfordUtters
+        else:
+            pairs = stemmedUtters
+        for utter in pairs:
+            u = {'t': []}
+            for t in utter:
+                if STANFORD:
+                    u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': t[3]})
+                else:
+                    u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': 'O'})
+            tree['conversation']['u'].append(u)
         
         #print(xmltodict.unparse(tree, pretty=True))
         
@@ -156,9 +190,15 @@ parser.add_argument('infile', help="An input file or directory. If it is a file 
 parser.add_argument('-p', '--print', help="Print verbose info", action='store_true')
 parser.add_argument('-o', '--outputdir', help='The directory to place the processed file(s), default "xmlout/"', nargs='?', type=str, const='xmlout', default='')
 parser.add_argument('-t', '--train', help="Train the tagger and chunker and serialize them as files.", action='store_true')
+parser.add_argument('--netag', action='store_true')
+parser.add_argument('--chunk', action='store_true')
+parser.add_argument('-s', '--stanford', action='store_true', help="Use Stanford CoreNLP")
 args = parser.parse_args()
 
 DEBUG = bool(args.print)
+NETAG = bool(args.netag)
+CHUNK = bool(args.chunk)
+STANFORD = bool(args.stanford)
 if args.outputdir:
     outputDir = args.outputdir
     WRITEOUT = True
