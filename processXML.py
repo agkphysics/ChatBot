@@ -38,10 +38,9 @@ class TagChunker(nltk.ChunkParserI):
         return nltk.conllstr2tree('\n'.join(lines))
 
 
-def processFile(file):
-    inFilename = file
-    print("Processing file {}".format(inFilename))
-    with open(inFilename, encoding='utf8') as f:
+def processTBFile(filename):
+    print("Processing file {}".format(filename))
+    with open(filename, encoding='utf8') as f:
         xmlDoc = xmltodict.parse(f.read(), encoding='utf-8')
         if (len(xmlDoc['CHAT']['@Lang'].split()) > 1
             or not isinstance(xmlDoc['CHAT']['Participants']['participant'], list)):
@@ -75,24 +74,10 @@ def processFile(file):
         # Join contiguous responses from identical speakers
         groupedUtters = [' '.join([x[1] for x in g]) for k, g in groupby(utters, itemgetter(0))]
 
-        # Set up Stanford Stuff
-        stserver = StanfordCoreNLP('http://localhost:9000/')
-        
-        
-        tokenizedUtters = [nltk.word_tokenize(utter) for utter in groupedUtters]
-        #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
-        taggedUtters = tagger.tag_sents(tokenizedUtters)
-
-        stemmer = nltk.stem.snowball.EnglishStemmer()
-        stemmedUtters = []
-        for utter in taggedUtters:
-            stemmedUtter = []
-            for (w, t) in utter:
-                stemmedUtter.append((w, t, stemmer.stem(w)))
-            stemmedUtters.append(stemmedUtter)
-        
-        stanfordUtters = []
         if STANFORD:
+            # Set up Stanford Stuff
+            stserver = StanfordCoreNLP('http://localhost:9000/')
+            stanfordUtters = []
             try:
                 for utter in groupedUtters:
                     annot = stserver.annotate(utter, properties={
@@ -106,53 +91,65 @@ def processFile(file):
                 print("Unable to connect to Stanford CoreNLP server. Make sure it is running at http://localhost:9000/")
                 print("You can start the server with the command: java -mx100m edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000")
                 exit()
+        else:
+            tokenizedUtters = [nltk.word_tokenize(utter) for utter in groupedUtters]
+            #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
+            taggedUtters = tagger.tag_sents(tokenizedUtters)
+
+            stemmer = nltk.stem.snowball.EnglishStemmer()
+            stemmedUtters = []
+            for utter in taggedUtters:
+                stemmedUtter = []
+                for (w, t) in utter:
+                    stemmedUtter.append((w, t, stemmer.stem(w)))
+                stemmedUtters.append(stemmedUtter)
             
-        if DEBUG:
-            print()
-            print('Utterances:')
-            for (who, utter) in utters[:20]:
-                print("{}: {}".format(who, utter))
-            print('...')
-
-            print()
-            print('Alternating responses:')
-            for utter in groupedUtters[:20]:
-                print(utter)
+            if DEBUG:
                 print()
-            print('...')
+                print('Utterances:')
+                for (who, utter) in utters[:20]:
+                    print("{}: {}".format(who, utter))
+                print('...')
 
-            print()
-            print('Tagged utterances:')
-            for utter in taggedUtters[:20]:
-                print(' '.join([nltk.tuple2str(tok) for tok in utter]))
                 print()
-            print('...')
-
-            if STANFORD:
-                print()
-                print('Processed using stanford corenlp:')
-                for utter in stanfordUtters[:20]:
+                print('Alternating responses:')
+                for utter in groupedUtters[:20]:
                     print(utter)
                     print()
                 print('...')
 
-        if CHUNK:
-            chunkedUtters = chunker.parse_sents(taggedUtters)
-            if DEBUG:
                 print()
-                print('Chunks:')
-                for utter in islice(chunkedUtters, 10):
-                    print(utter)
+                print('Tagged utterances:')
+                for utter in taggedUtters[:20]:
+                    print(' '.join([nltk.tuple2str(tok) for tok in utter]))
+                    print()
                 print('...')
-        
-        if NETAG:
-            neTags = nltk.ne_chunk_sents(taggedUtters)
-            if DEBUG:
-                print()
-                print('NE tags:')
-                for utter in islice(neTags, 10):
-                    print(utter)
-                print('...')
+
+                if STANFORD:
+                    print()
+                    print('Processed using stanford corenlp:')
+                    for utter in stanfordUtters[:20]:
+                        print(utter)
+                        print()
+                    print('...')
+
+            if CHUNK:
+                chunkedUtters = chunker.parse_sents(taggedUtters)
+                if DEBUG:
+                    print()
+                    print('Chunks:')
+                    for utter in islice(chunkedUtters, 10):
+                        print(utter)
+                    print('...')
+            
+            if NETAG:
+                neTags = nltk.ne_chunk_sents(taggedUtters)
+                if DEBUG:
+                    print()
+                    print('NE tags:')
+                    for utter in islice(neTags, 10):
+                        print(utter)
+                    print('...')
         
         tree = {
             'conversation': {
@@ -161,10 +158,10 @@ def processFile(file):
             }
         }
         if STANFORD:
-            pairs = stanfordUtters
+            utters = stanfordUtters
         else:
-            pairs = stemmedUtters
-        for utter in pairs:
+            utters = stemmedUtters
+        for utter in utters:
             u = {'t': []}
             for t in utter:
                 if STANFORD:
@@ -176,12 +173,57 @@ def processFile(file):
         #print(xmltodict.unparse(tree, pretty=True))
         
         if WRITEOUT:
-            outFilename = os.path.join(outputDir, 'conv_' + os.path.basename(inFilename))
+            outFilename = os.path.join(outputDir, 'conv_' + os.path.basename(filename))
             print('Writing to {}'.format(outFilename))
             outfile = open(outFilename, mode='bw')
             xmltodict.unparse(tree, output=outfile, pretty=True)
             outfile.close()
 
+
+def processANCFile(filename):
+    print("Processing file {}".format(filename))
+    with open(filename, encoding='utf8') as f:
+        xmlDoc = xmltodict.parse(f.read(), encoding='utf-8')
+        utters = []
+        for turn in xmlDoc['cesDoc']['body']['turn']:
+            sents = []
+            if isinstance(turn['u'], list):
+                sents = turn['u']
+            else:
+                sents = [turn['u']]
+            for u in sents:
+                toks = []
+                utter = []
+                if isinstance(u['tok'], list):
+                    sents = u['tok']
+                else:
+                    sents = [u['tok']]
+                for tok in toks:
+                    utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
+                utters.append(utter)
+        
+        tree = {
+            'conversation': {
+                '@id': filename,
+                'u': []
+            }
+        }
+        for utter in utters:
+            u = {'t': []}
+            for t in utter:
+                u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': 'O'})
+            tree['conversation']['u'].append(u)
+        
+        #print(xmltodict.unparse(tree, pretty=True))
+        
+        if WRITEOUT:
+            outFilename = os.path.join(outputDir, 'conv_' + os.path.basename(filename))
+            print('Writing to {}'.format(outFilename))
+            outfile = open(outFilename, mode='bw')
+            xmltodict.unparse(tree, output=outfile, pretty=True)
+            outfile.close()
+
+                        
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('infile', help="An input file or directory. If it is a file then the file is processed. " +
@@ -280,9 +322,9 @@ if os.path.isdir(infile):
     from concurrent.futures import ProcessPoolExecutor
     try:
         with ProcessPoolExecutor() as executor:
-            executor.map(processFile, files)
+            executor.map(processTBFile, files)
     except:
         for f in files:
-            processFile(f)
+            processTBFile(f)
 else:
-    processFile(infile)
+    processTBFile(infile)
