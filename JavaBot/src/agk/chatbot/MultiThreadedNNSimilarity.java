@@ -32,11 +32,6 @@ public class MultiThreadedNNSimilarity extends NNScoringMethod {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-//		
-//		for (CBRCase c : cases) {
-//            GlobalSimilarityFunction gsf = simConfig.getDescriptionSimFunction();
-//            coll.add(new RetrievalResult(c, gsf.compute(c.getDescription(), query.getDescription(), c, query, simConfig)));
-//        }
 		
 		Collections.sort(coll);
 		

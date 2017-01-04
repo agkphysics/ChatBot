@@ -1,6 +1,3 @@
-/**
- *
- */
 package agk.chatbot;
 
 import info.debatty.java.stringsimilarity.interfaces.NormalizedStringSimilarity;

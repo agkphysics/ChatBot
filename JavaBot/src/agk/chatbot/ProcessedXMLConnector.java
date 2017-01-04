@@ -1,6 +1,3 @@
-/**
- *
- */
 package agk.chatbot;
 
 import java.io.File;

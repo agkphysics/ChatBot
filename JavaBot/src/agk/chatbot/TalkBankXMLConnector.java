@@ -1,6 +1,3 @@
-/**
- *
- */
 package agk.chatbot;
 
 import java.io.File;
@@ -9,15 +6,11 @@ import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.concurrent.*;
 
 import javax.xml.bind.JAXB;
 
 import jcolibri.cbrcore.*;
 import jcolibri.exception.InitializingException;
-import jcolibri.extensions.textual.IE.common.StopWordsDetector;
-import jcolibri.extensions.textual.IE.common.TextStemmer;
-import jcolibri.extensions.textual.IE.opennlp.*;
 import talkbank.schema.*;
 
 /**

@@ -1,12 +1,7 @@
-/**
- * 
- */
 package agk.chatbot;
 
 import jcolibri.cbrcore.Attribute;
 import jcolibri.cbrcore.CaseComponent;
-import jcolibri.datatypes.Text;
-import jcolibri.extensions.textual.IE.opennlp.IETextOpenNLP;
 import jcolibri.extensions.textual.IE.representation.IEText;
 
 /**

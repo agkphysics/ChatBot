@@ -1,23 +1,14 @@
-/**
- *
- */
 package agk.chatbot;
 
 import jcolibri.casebase.LinealCaseBase;
 import jcolibri.cbraplications.StandardCBRApplication;
 import jcolibri.cbrcore.*;
 import jcolibri.exception.ExecutionException;
-import jcolibri.extensions.textual.IE.common.*;
 import jcolibri.extensions.textual.IE.representation.*;
 import jcolibri.method.retrieve.RetrievalResult;
 import jcolibri.method.retrieve.NNretrieval.NNConfig;
-import jcolibri.method.retrieve.NNretrieval.NNScoringMethod;
 import jcolibri.method.retrieve.NNretrieval.similarity.global.Average;
-import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.CosineCoefficient;
-import jcolibri.method.retrieve.NNretrieval.similarity.local.textual.DiceCoefficient;
-import jcolibri.method.retrieve.selection.SelectCases;
 
-import opennlp.tools.lemmatizer.SimpleLemmatizer;
 import opennlp.tools.namefind.*;
 import opennlp.tools.postag.*;
 import opennlp.tools.stemmer.Stemmer;
@@ -31,21 +22,13 @@ import java.util.*;
 
 import org.apache.commons.logging.*;
 
-import edu.cmu.lti.imw.InMemoryWordNet;
-import edu.cmu.lti.imw.InMemoryWordNetAPI;
-import edu.cmu.lti.lexical_db.ILexicalDatabase;
-import edu.cmu.lti.lexical_db.data.Concept;
-import edu.cmu.lti.ws4j.RelatednessCalculator;
-import edu.cmu.lti.ws4j.WS4J;
-import edu.cmu.lti.ws4j.demo.SimilarityCalculationDemo;
-import edu.mit.jwi.*;
 import edu.mit.jwi.item.*;
 
 /**
  * This class represents the main chat bot application.
  * 
  * @author Aaron Keesing
- * @version 1.7
+ * @version 1.7.5
  */
 public class ChatBot implements StandardCBRApplication {
     
@@ -60,7 +43,6 @@ public class ChatBot implements StandardCBRApplication {
     private TokenNameFinder locationNER;
     private TokenNameFinder organisationNER;
     private Stemmer stemmer;
-    private static IRAMDictionary dict;
 
     /**
      * @param args main arguments to application
@@ -82,32 +64,6 @@ public class ChatBot implements StandardCBRApplication {
         
         TextSimilarity.init();
         
-//        dict = new RAMDictionary(new File("../../wordnet/dict"));
-//		try {
-//			dict.open();
-//			dict.load(true);
-//		} catch (IOException e1) {
-//			e1.printStackTrace();
-//		} catch (InterruptedException e1) {
-//			e1.printStackTrace();
-//		}
-//		System.out.println("Loaded JWI wordnet library.");
-//		
-//		
-//		long t0 = System.currentTimeMillis();
-//		int num = 0;
-//		for (POS pos : POS.values()) {
-//			for (Iterator<IIndexWord> i = dict.getIndexWordIterator(pos); i.hasNext();) {
-//				for (IWordID id : i.next().getWordIDs()) {
-//					dict.getWord(id).getLemma();
-//					num++;
-//				}
-//			}
-//		}
-//		long t1 = System.currentTimeMillis();
-//		System.out.println(String.format("Traversed %d wordnet lemmas in %.2f seconds", num, (t1 - t0) / 1000.0));
-//		System.out.println();
-//
         double dist = TextSimilarity.similarity("flat", "apartment", POS.NOUN);
         System.out.println(dist);
 
