@@ -21,6 +21,10 @@ import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
  */
 public class TextSimilarity implements LocalSimilarityFunction {
 
+    private static final int SIZE_DIFFERENCE_THRESHOLD = 10;
+    private static final double MIN_SIMILARITY = 0.3;
+    private static final double DELTA = 0.75;
+    
     private static IRAMDictionary dict;
     private static IStemmer stemmer;
 
@@ -38,13 +42,11 @@ public class TextSimilarity implements LocalSimilarityFunction {
             try {
                 dict.open();
                 dict.load(true);
-            } catch (IOException e1) {
+            } catch (Exception e) {
                 System.err.println("Error loading wordnet into memory.");
-                e1.printStackTrace();
-            } catch (InterruptedException e1) {
-                System.err.println("Interrupted while loading wordnet into memory.");
-                e1.printStackTrace();
+                e.printStackTrace();
             }
+            System.out.println("Test similarity between house and apartment: " + similarity("house", "apartment", POS.NOUN));
             System.out.println("Loaded JWI wordnet library.");
         }
         if (stemmer == null) {
@@ -72,7 +74,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
         IEText queryText = (IEText)queryObject;
         
         /*
-         * The following algorithm was developed by Li et al.
+         * The following algorithm was adapted from one developed by Li et al.
          * "Sentence Similarity Based on Semantic Nets and Corpus Statistics"
          * IEEE Transactions on Knowledge and Data Engineering 18(8):1138-1150
          * 
@@ -83,65 +85,101 @@ public class TextSimilarity implements LocalSimilarityFunction {
         List<Token> sent2Set = queryText.getAllTokens();
         Set<String> s2WordSet = new HashSet<>();
         
+        Map<String, Integer> s1WordMap = new HashMap<>();
+        Map<String, Integer> s2WordMap = new HashMap<>();
+        
+        // If sentences are of very different length, they are very likely to not be similar at all
+        if (Math.abs(sent1Set.size() - sent2Set.size()) > SIZE_DIFFERENCE_THRESHOLD) return 0.0;
+        
         Set<Token> jointSet = new HashSet<>();
         Set<String> jointWordSet = new HashSet<>();
-        for (Token t : sent1Set) {
+        // TODO: Punctuation handling
+        for (int i = 0; i < sent1Set.size(); i++) {
+            Token t = sent1Set.get(i);
             if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
                 jointSet.add(t);
-                jointWordSet.add(t.getRawContent().toLowerCase());
             }
+            jointWordSet.add(t.getRawContent().toLowerCase());
             s1WordSet.add(t.getRawContent().toLowerCase());
+            s1WordMap.put(t.getRawContent().toLowerCase(), i);
         }
-        for (Token t : sent2Set) {
+        for (int i = 0; i < sent2Set.size(); i++) {
+            Token t = sent2Set.get(i);
             if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
                 jointSet.add(t);
-                jointWordSet.add(t.getRawContent().toLowerCase());
             }
+            jointWordSet.add(t.getRawContent().toLowerCase());
             s2WordSet.add(t.getRawContent().toLowerCase());
+            s2WordMap.put(t.getRawContent().toLowerCase(), i);
         }
         
         double[] s1 = new double[jointSet.size()];
         double[] s2 = new double[jointSet.size()];
+        double[] r1 = new double[jointSet.size()];
+        double[] r2 = new double[jointSet.size()];
         
         Iterator<Token> iter = jointSet.iterator();
         for (int i = 0; i < jointSet.size(); i++) {
             Token t = iter.next();
             POS tPOS = pennToWNPOS(t.getPostag());
-            final double THRESHOLD = 0.3;
             
             if (s1WordSet.contains(t.getRawContent().toLowerCase())) {
                 s1[i] = 1.0;
+                r1[i] = s1WordMap.get(t.getRawContent().toLowerCase());
             } else if (tPOS == null) {
                 s1[i] = 0.0; // Not comparable by semantics using WordNet
+                r1[i] = 0.0;
             } else {
                 double maxSim = 0.0;
+                String maxSimWord = "";
                 for (Token word : sent1Set) {
                     POS wordPOS = pennToWNPOS(word.getPostag());
                     double sim = 0.0;
                     if (wordPOS != null && wordPOS.equals(tPOS)) sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS);
-                    if (sim > maxSim) maxSim = sim;
+                    if (sim > maxSim) {
+                        maxSim = sim;
+                        maxSimWord = word.getRawContent().toLowerCase();
+                    }
                 }
-                if (maxSim > THRESHOLD) s1[i] = maxSim;
-                else s1[i] = 0.0;
+                if (maxSim > MIN_SIMILARITY) {
+                    s1[i] = maxSim;
+                    r1[i] = s1WordMap.get(maxSimWord);
+                } else {
+                    s1[i] = 0.0;
+                    r1[i] = 0.0;
+                }
             }
             
             if (s2WordSet.contains(t.getRawContent().toLowerCase())) {
                 s2[i] = 1.0;
+                r2[i] = s2WordMap.get(t.getRawContent().toLowerCase());
             } else if (tPOS == null) {
                 s2[i] = 0.0;
+                r2[i] = 0.0;
             } else {
                 double maxSim = 0.0;
+                String maxSimWord = "";
                 for (Token word : sent2Set) {
                     POS wordPOS = pennToWNPOS(word.getPostag());
                     double sim = 0.0;
                     if (wordPOS != null && wordPOS.equals(tPOS)) sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS);
-                    if (sim > maxSim) maxSim = sim;
+                    if (sim > maxSim) {
+                        maxSim = sim;
+                        maxSimWord = word.getRawContent().toLowerCase();
+                    }
                 }
-                if (maxSim > THRESHOLD) s2[i] = maxSim;
-                else s2[i] = 0.0;
+                if (maxSim > MIN_SIMILARITY) {
+                    s2[i] = maxSim;
+                    r1[i] = s2WordMap.get(maxSimWord);
+                } else {
+                    s2[i] = 0.0;
+                    r1[i] = 0.0;
+                }
             }
         }
         
+        double prodDiffR = 0.0;
+        double prodSumR = 0.0;
         double dotProduct = 0.0;
         double prodS1 = 0.0;
         double prodS2 = 0.0;
@@ -149,9 +187,17 @@ public class TextSimilarity implements LocalSimilarityFunction {
             dotProduct += s1[i] * s2[i];
             prodS1 += s1[i] * s1[i];
             prodS2 += s2[i] * s2[i];
+            prodDiffR += (r1[i] - r2[i]) * (r1[i] - r2[i]);
+            prodSumR += (r1[i] + r2[i]) * (r1[i] + r2[i]);
         }
         
-        return dotProduct / (Math.sqrt(prodS1) * Math.sqrt(prodS2));
+        // Avoid division by zero, which would mean they're not similar anyway
+        if (Math.abs(prodSumR) < 1e-6 || Math.abs(prodS1) < 1e-6 || Math.abs(prodS2) < 1e-6) return 0.0;
+        
+        double Sr = 1 - Math.sqrt(prodDiffR) / Math.sqrt(prodSumR);
+        double Ss = dotProduct / (Math.sqrt(prodS1) * Math.sqrt(prodS2));
+        
+        return DELTA * Ss + (1 - DELTA) * Sr;
     }
 
     /*

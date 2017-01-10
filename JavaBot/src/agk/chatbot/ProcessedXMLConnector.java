@@ -1,23 +1,26 @@
 package agk.chatbot;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import jcolibri.cbrcore.*;
 import jcolibri.exception.InitializingException;
-import jcolibri.extensions.textual.IE.representation.IEText;
 import jcolibri.extensions.textual.IE.representation.Paragraph;
 import jcolibri.extensions.textual.IE.representation.Sentence;
 import jcolibri.extensions.textual.IE.representation.Token;
@@ -31,17 +34,19 @@ import jcolibri.extensions.textual.IE.representation.Token;
 public class ProcessedXMLConnector implements Connector {
 
     private List<File> xmlFiles;
+    private Path xmlPath;
     
     /**
      *
      */
-    public ProcessedXMLConnector(Path pathToXmls) {
-    	System.out.println("Using corpus at " + pathToXmls.toAbsolutePath().normalize().toString());
+    public ProcessedXMLConnector(Path xmlPath) {
+        this.xmlPath = xmlPath;
+    	System.out.println("Using corpus at " + xmlPath.toAbsolutePath().normalize().toString());
         
         xmlFiles = new ArrayList<>();
         
         try {
-            Files.walkFileTree(pathToXmls, new FileVisitor<Path>() {
+            Files.walkFileTree(xmlPath, new FileVisitor<Path>() {
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                     return FileVisitResult.CONTINUE;
@@ -86,7 +91,7 @@ public class ProcessedXMLConnector implements Connector {
                 stmt.setId(root.getAttribute("id"));
                 resp.setId(root.getAttribute("id"));
                 
-                IEText txt;
+                NLPText txt;
                 String utterance;
                 Sentence sent;
                 Paragraph para;
@@ -111,7 +116,7 @@ public class ProcessedXMLConnector implements Connector {
                 utterance = String.join(" ", words);
                 sent = new Sentence(utterance);
                 para = new Paragraph(utterance);
-                txt = new IEText(utterance);
+                txt = new NLPText(utterance);
                 sent.addTokens(tokens);
                 para.addSentence(sent);
                 txt.addParagraph(para);
@@ -138,7 +143,7 @@ public class ProcessedXMLConnector implements Connector {
                 utterance = String.join(" ", words);
                 sent = new Sentence(utterance);
                 para = new Paragraph(utterance);
-                txt = new IEText(utterance);
+                txt = new NLPText(utterance);
                 sent.addTokens(tokens);
                 para.addSentence(sent);
                 txt.addParagraph(para);
@@ -230,5 +235,54 @@ public class ProcessedXMLConnector implements Connector {
      * @see jcolibri.cbrcore.Connector#storeCases(java.util.Collection)
      */
     @Override
-    public void storeCases(Collection<CBRCase> cases) {}
+    public void storeCases(Collection<CBRCase> cases) {
+        try {
+            DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = dBuilder.newDocument();
+            Element conversation = doc.createElement("conversation");
+            doc.appendChild(conversation);
+            String currentDateTime = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss").format(Date.from(Instant.now()));
+            conversation.setAttribute("id", currentDateTime);
+            for (CBRCase _case : cases) {
+                ChatResponse desc = (ChatResponse)_case.getDescription();
+                Element utter = doc.createElement("u");
+                conversation.appendChild(utter);
+                for (Token _t : desc.getText().getAllTokens()) {
+                    NLPToken t = (NLPToken)_t; // TODO: Change
+                    Element tok = doc.createElement("tok");
+                    tok.setAttribute("pos", t.getPostag());
+                    tok.setAttribute("stem", t.getStem());
+                    tok.setAttribute("ner", t.getNerTag());
+                    tok.setTextContent(t.getRawContent());
+                    utter.appendChild(tok);
+                }
+                
+                ChatResponse sol = (ChatResponse)_case.getSolution();
+                Element utter2 = doc.createElement("u");
+                conversation.appendChild(utter2);
+                for (Token _t : sol.getText().getAllTokens()) {
+                    NLPToken t = (NLPToken)_t; // TODO: Change
+                    Element tok = doc.createElement("tok");
+                    tok.setAttribute("pos", t.getPostag());
+                    tok.setAttribute("stem", t.getStem());
+                    tok.setAttribute("ner", t.getNerTag());
+                    tok.setTextContent(t.getRawContent());
+                    utter2.appendChild(tok);
+                }
+            }
+            File xmlDir = this.xmlPath.resolve("bot").toFile();
+            xmlDir.mkdirs();
+            File xmlFile = new File(xmlDir, currentDateTime + ".xml");
+            xmlFile.createNewFile();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            DOMSource source = new DOMSource(doc);
+            StreamResult streamResult = new StreamResult(xmlFile);
+            transformer.transform(source, streamResult);
+            System.out.println("Wrote file " + xmlFile.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

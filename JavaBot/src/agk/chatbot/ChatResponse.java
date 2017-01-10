@@ -2,7 +2,6 @@ package agk.chatbot;
 
 import jcolibri.cbrcore.Attribute;
 import jcolibri.cbrcore.CaseComponent;
-import jcolibri.extensions.textual.IE.representation.IEText;
 
 /**
  * @author Aaron
@@ -10,36 +9,32 @@ import jcolibri.extensions.textual.IE.representation.IEText;
  */
 public class ChatResponse implements CaseComponent {
     
-    String id;
-    IEText text;
+    private String id;
+    private NLPText text;
 
     /**
      * 
      */
     public ChatResponse() {
-        text = new IEText();
+        text = new NLPText();
     }
     
     /**
      * @return the text
      */
-    public IEText getText() {
+    public NLPText getText() {
         return text;
     }
 
     /**
      * @param text the text to set
      */
-    public void setText(IEText text) {
+    public void setText(NLPText text) {
         this.text = text;
     }
     
     public void setText(String text) {
-        try {
-            this.text.fromString(text);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.text.fromString(text);
     }
 
     /* (non-Javadoc)

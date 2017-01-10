@@ -3,7 +3,7 @@
 ## You'll need to run the script with the -t option first to train the tagger
 ## and chunker, and store them serialised.
 ## 
-## Version: 1.7
+## Version: 1.8
 ## Author: Aaron Keesing
 
 
@@ -12,6 +12,7 @@ import nltk, nltk.corpus
 from pycorenlp import StanfordCoreNLP
 import os.path
 import os
+from concurrent.futures import ThreadPoolExecutor
 from itertools import groupby, islice, chain
 from operator import itemgetter
 from pathlib import Path
@@ -36,6 +37,108 @@ class TagChunker(nltk.ChunkParserI):
         lines = [' '.join([w, t, c]) for (w, (t, c)) in wtc if c]
         # create tree from conll formatted chunk lines
         return nltk.conllstr2tree('\n'.join(lines))
+
+
+def stanfordProcess(utters):
+    # Set up Stanford Stuff
+    stserver = StanfordCoreNLP('http://localhost:9000/')
+    processed = []
+    try:
+        for utter in utters:
+            annot = stserver.annotate(utter, properties={
+                'annotators': 'tokenize,ssplit,pos,ner,lemma',
+                #'pos.model': 'edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger',
+                'pos.model': 'gate-EN-twitter.model',
+                'ner.model': 'edu/stanford/nlp/models/ner/english.conll.4class.caseless.distsim.crf.ser.gz',
+                'outputFormat': 'json'
+            })
+            processed.append([(tok['word'], tok['pos'], tok['lemma'], tok['ner']) for tok in annot['sentences'][0]['tokens']])
+    except Exception:
+        print("Unable to connect to Stanford CoreNLP server. Make sure it is running at http://localhost:9000/")
+        print("You can start the server with the command: java -mx1000m edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000")
+        exit()
+    if DEBUG:
+        print()
+        print('Processed using stanford corenlp:')
+        for utter in processed[:20]:
+            print(utter)
+            print()
+        print('...')
+    return processed
+
+
+def nltkProcess(utters):
+    tokenizedUtters = [nltk.word_tokenize(utter) for utter in utters]
+    #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
+    taggedUtters = tagger.tag_sents(tokenizedUtters)
+
+    stemmer = nltk.stem.snowball.EnglishStemmer()
+    stemmedUtters = []
+    for utter in taggedUtters:
+        stemmedUtter = []
+        for (w, t) in utter:
+            stemmedUtter.append((w, t, stemmer.stem(w)))
+        stemmedUtters.append(stemmedUtter)
+    
+    if DEBUG:
+        print()
+        print('Utterances:')
+        for utter in utters[:20]:
+            print(utter)
+        print('...')
+
+        print()
+        print('Tagged utterances:')
+        for utter in taggedUtters[:20]:
+            print(' '.join([nltk.tuple2str(tok) for tok in utter]))
+            print()
+        print('...')
+
+    if CHUNK:
+        chunkedUtters = chunker.parse_sents(taggedUtters)
+        if DEBUG:
+            print()
+            print('Chunks:')
+            for utter in islice(chunkedUtters, 10):
+                print(utter)
+            print('...')
+    
+    if NETAG:
+        neTags = nltk.ne_chunk_sents(taggedUtters)
+        if DEBUG:
+            print()
+            print('NE tags:')
+            for utter in islice(neTags, 10):
+                print(utter)
+            print('...')
+    
+    return stemmedUtters
+
+
+def writexml(utters, id, filename):
+    if not filename.endswith('.xml'):
+        filename = filename + '.xml'
+    tree = {
+        'conversation': {
+            '@id': id,
+            'u': []
+        }
+    }
+    for utter in utters:
+        u = {'t': []}
+        for t in utter:
+            if STANFORD:
+                u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': t[3]})
+            else:
+                u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': 'O'})
+        tree['conversation']['u'].append(u)
+    
+    #print(xmltodict.unparse(tree, pretty=True))
+    filename = os.path.join(outputDir, filename)
+    print('Writing to {}'.format(filename))
+    outfile = open(filename, mode='bw')
+    xmltodict.unparse(tree, output=outfile, pretty=True)
+    outfile.close()
 
 
 def processTBFile(filename):
@@ -75,109 +178,30 @@ def processTBFile(filename):
         groupedUtters = [' '.join([x[1] for x in g]) for k, g in groupby(utters, itemgetter(0))]
 
         if STANFORD:
-            # Set up Stanford Stuff
-            stserver = StanfordCoreNLP('http://localhost:9000/')
-            stanfordUtters = []
-            try:
-                for utter in groupedUtters:
-                    annot = stserver.annotate(utter, properties={
-                        'annotators': 'tokenize,ssplit,pos,ner,lemma',
-                        'pos.model': 'edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger',
-                        'ner.model': 'edu/stanford/nlp/models/ner/english.conll.4class.caseless.distsim.crf.ser.gz',
-                        'outputFormat': 'json'
-                    })
-                    stanfordUtters.append([(tok['word'], tok['pos'], tok['lemma'], tok['ner']) for tok in annot['sentences'][0]['tokens']])
-            except Exception:
-                print("Unable to connect to Stanford CoreNLP server. Make sure it is running at http://localhost:9000/")
-                print("You can start the server with the command: java -mx100m edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000")
-                exit()
+            processedUtters = stanfordProcess(groupedUtters)
         else:
-            tokenizedUtters = [nltk.word_tokenize(utter) for utter in groupedUtters]
-            #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
-            taggedUtters = tagger.tag_sents(tokenizedUtters)
-
-            stemmer = nltk.stem.snowball.EnglishStemmer()
-            stemmedUtters = []
-            for utter in taggedUtters:
-                stemmedUtter = []
-                for (w, t) in utter:
-                    stemmedUtter.append((w, t, stemmer.stem(w)))
-                stemmedUtters.append(stemmedUtter)
-            
-            if DEBUG:
-                print()
-                print('Utterances:')
-                for (who, utter) in utters[:20]:
-                    print("{}: {}".format(who, utter))
-                print('...')
-
-                print()
-                print('Alternating responses:')
-                for utter in groupedUtters[:20]:
-                    print(utter)
-                    print()
-                print('...')
-
-                print()
-                print('Tagged utterances:')
-                for utter in taggedUtters[:20]:
-                    print(' '.join([nltk.tuple2str(tok) for tok in utter]))
-                    print()
-                print('...')
-
-                if STANFORD:
-                    print()
-                    print('Processed using stanford corenlp:')
-                    for utter in stanfordUtters[:20]:
-                        print(utter)
-                        print()
-                    print('...')
-
-            if CHUNK:
-                chunkedUtters = chunker.parse_sents(taggedUtters)
-                if DEBUG:
-                    print()
-                    print('Chunks:')
-                    for utter in islice(chunkedUtters, 10):
-                        print(utter)
-                    print('...')
-            
-            if NETAG:
-                neTags = nltk.ne_chunk_sents(taggedUtters)
-                if DEBUG:
-                    print()
-                    print('NE tags:')
-                    for utter in islice(neTags, 10):
-                        print(utter)
-                    print('...')
-        
-        tree = {
-            'conversation': {
-                '@id': xmlDoc['CHAT']['@Id'],
-                'u': []
-            }
-        }
-        if STANFORD:
-            utters = stanfordUtters
-        else:
-            utters = stemmedUtters
-        for utter in utters:
-            u = {'t': []}
-            for t in utter:
-                if STANFORD:
-                    u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': t[3]})
-                else:
-                    u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': 'O'})
-            tree['conversation']['u'].append(u)
-        
-        #print(xmltodict.unparse(tree, pretty=True))
+            processedUtters = nltkProcess(groupedUtters)
         
         if WRITEOUT:
-            outFilename = os.path.join(outputDir, 'conv_' + os.path.basename(filename))
-            print('Writing to {}'.format(outFilename))
-            outfile = open(outFilename, mode='bw')
-            xmltodict.unparse(tree, output=outfile, pretty=True)
-            outfile.close()
+            writexml(processedUtters, xmlDoc['CHAT']['@id'], 'conv_' + os.path.basename(filename))
+
+
+def processTwitterFile(filename):
+    print("Processing file {}".format(filename))
+    with open(filename, encoding='utf8') as f:
+        alllines = list(map(lambda x: x.strip(), f.readlines()))
+        utters = []
+        with ThreadPoolExecutor() as executor:
+            def func(lines, i):
+                utters = [line[20:] for line in lines] # Ignore '123456789012345678: '
+                if STANFORD:
+                    utters = stanfordProcess(utters)
+                else:
+                    utters = nltkProcess(utters)
+                if WRITEOUT:
+                    writexml(utters, 'twitter_' + str(i), 'conv_twitter_' + str(i))
+            for i in range(len(alllines) // 4):
+                executor.submit(func, alllines[4*i:4*i+3], i)
 
 
 def processANCFile(filename):
@@ -192,38 +216,27 @@ def processANCFile(filename):
             else:
                 sents = [turn['u']]
             for u in sents:
-                toks = []
-                utter = []
-                if isinstance(u['tok'], list):
-                    sents = u['tok']
+                if isinstance(u['u'], list):
+                    us = u['u']
                 else:
-                    sents = [u['tok']]
-                for tok in toks:
-                    utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
+                    us = [u['u']]
+                utter = []
+                for ut in us:
+                    toks = []
+                    if isinstance(ut['tok'], list):
+                        toks = ut['tok']
+                    else:
+                        toks = [ut['tok']]
+                    for tok in toks:
+                        utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
                 utters.append(utter)
-        
-        tree = {
-            'conversation': {
-                '@id': filename,
-                'u': []
-            }
-        }
-        for utter in utters:
-            u = {'t': []}
-            for t in utter:
-                u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': 'O'})
-            tree['conversation']['u'].append(u)
-        
-        #print(xmltodict.unparse(tree, pretty=True))
+        if DEBUG:
+            for utter in utters[20:]:
+                print(utter)
         
         if WRITEOUT:
-            outFilename = os.path.join(outputDir, 'conv_' + os.path.basename(filename))
-            print('Writing to {}'.format(outFilename))
-            outfile = open(outFilename, mode='bw')
-            xmltodict.unparse(tree, output=outfile, pretty=True)
-            outfile.close()
+            writexml(utters, os.path.basename(filename), 'conv_' + os.path.basename(filename))
 
-                        
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('infile', help="An input file or directory. If it is a file then the file is processed. " +
@@ -231,10 +244,16 @@ parser.add_argument('infile', help="An input file or directory. If it is a file 
                                     "the directory and all subdirectories.", type=str)
 parser.add_argument('-p', '--print', help="Print verbose info", action='store_true')
 parser.add_argument('-o', '--outputdir', help='The directory to place the processed file(s), default "xmlout/"', nargs='?', type=str, const='xmlout', default='')
-parser.add_argument('-t', '--train', help="Train the tagger and chunker and serialize them as files.", action='store_true')
+
+parser.add_argument('--train', help="Train the tagger and chunker and serialize them as files.", action='store_true')
 parser.add_argument('--netag', action='store_true')
 parser.add_argument('--chunk', action='store_true')
 parser.add_argument('-s', '--stanford', action='store_true', help="Use Stanford CoreNLP")
+
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-t', '--talkbank', action='store_true')
+group.add_argument('-w', '--twitter', action='store_true')
+group.add_argument('-a', '--anc', action='store_true')
 args = parser.parse_args()
 
 DEBUG = bool(args.print)
@@ -253,11 +272,12 @@ if WRITEOUT and not os.path.exists(outputDir):
 if args.train:
     # Train POS tagger
     train_sents = nltk.corpus.conll2000.tagged_sents()
+    ANCCorpus = nltk.corpus.TaggedCorpusReader('../OpenANC/processed/spoken', '.xml', sep='_')
+    train_sents = ANCCorpus.tagged_sents()
     patterns = [
         (r'^[Yy]eah$', 'UH'),
-        (r'^[Oo][Hh]$', 'UH'),
-        (r'^[UuHh]+$', 'UH'),
-        (r'^[MmHh]+$', 'UH'),
+        (r'^[Oo]+[Hh]+$', 'UH'),
+        (r'^[UuHhMm]+$', 'UH'),
         (r'^[HhAa]+$', 'UH'),
         (r'^okay$', 'JJ'),
         (r'^[Oo][Kk]$', 'JJ'),
@@ -316,15 +336,23 @@ else:
     print("Loaded chunker")
 
 infile = args.infile
+if args.talkbank:
+    processfile = processTBFile
+elif args.twitter:
+    processfile = processTwitterFile
+elif args.anc:
+    processfile = processANCFile
+else:
+    raise Exception("Type of file(s) not specified")
+
 if os.path.isdir(infile):
     files = [str(p) for p in Path(infile).glob('**/*.xml')]
     # Do tree concurrently
-    from concurrent.futures import ProcessPoolExecutor
     try:
-        with ProcessPoolExecutor() as executor:
-            executor.map(processTBFile, files)
+        with ThreadPoolExecutor() as executor:
+            executor.map(processfile, files)
     except:
         for f in files:
-            processTBFile(f)
+            processfile(f)
 else:
-    processTBFile(infile)
+    processfile(infile)
