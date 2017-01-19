@@ -182,7 +182,7 @@ public class ChatBot implements StandardCBRApplication {
             throw new ExecutionException(e1);
         }
         NLPText.initPipeline();
-        
+
         _connector = new ProcessedXMLConnector(corpusPath);
         _caseBase = new InMemoryCaseBase();
         currentThread = new ArrayList<>();
