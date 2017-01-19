@@ -1,10 +1,7 @@
 ## processXML.py - Script for processing the XMLs from the talkbank corpus
 ##
-## You'll need to run the script with the -t option first to train the tagger
-## and chunker, and store them serialised.
-## 
-## Version: 1.8
-## Author: Aaron Keesing
+## Copyright (C) 2017 Aaron Keesing
+## Version: 2.0
 
 
 import xmltodict
@@ -47,7 +44,7 @@ def stanfordProcess(utters):
         for utter in utters:
             annot = stserver.annotate(utter, properties={
                 'annotators': 'tokenize,ssplit,pos,ner,lemma',
-                #'pos.model': 'edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger',
+                #'pos.model': 'edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger',
                 'pos.model': 'gate-EN-twitter.model',
                 'ner.model': 'edu/stanford/nlp/models/ner/english.conll.4class.caseless.distsim.crf.ser.gz',
                 'outputFormat': 'json'
@@ -115,6 +112,22 @@ def nltkProcess(utters):
     return stemmedUtters
 
 
+badPatterns = [
+    re.compile(r'^[OoHh]+$'),
+    re.compile(r'^[UuHhMm]+$'),
+    re.compile(r'^[UuGgHh]+$'),
+    re.compile(r'^[HhAa]+$'),
+    re.compile(r'^[Xx]+$'),
+    re.compile(r'^([AaEeIiOoUu])\1{2,}$')
+]
+def isBad(word):
+    if word.startswith('-') or word.endswith('-'):
+        return True
+    for pat in badPatterns:
+        if pat.match(word):
+            return True
+
+
 def writexml(utters, id, filename):
     if not filename.endswith('.xml'):
         filename = filename + '.xml'
@@ -169,21 +182,21 @@ def processTBFile(filename):
                     else:
                         words.append(w)
                 # Get rid of bad stuff in words
+                
                 words = list(chain(*[w.split('_') for w in words]))
-                words = [re.sub(r'[^A-Za-z0-9,.?$%&;:\'"]', '', w) for w in words if '-' not in w and w.lower() not in {'um', 'uh'}]
+                words = [re.sub(r'[^A-Za-z0-9)(,.?!$%&;:\'"]', '', w) for w in words]
+                words = [w for w in words if not isBad(w)]
+                words = [re.sub(r'([A-Za-z])\1\1+', r'\1\1', w) for w in words]
+
                 if len(words) > 0:
                     utters.append((who, ' '.join(words)))
 
         # Join contiguous responses from identical speakers
         groupedUtters = [' '.join([x[1] for x in g]) for k, g in groupby(utters, itemgetter(0))]
-
-        if STANFORD:
-            processedUtters = stanfordProcess(groupedUtters)
-        else:
-            processedUtters = nltkProcess(groupedUtters)
+        processedUtters = processutterfunc(groupedUtters)
         
         if WRITEOUT:
-            writexml(processedUtters, xmlDoc['CHAT']['@id'], 'conv_' + os.path.basename(filename))
+            writexml(processedUtters, xmlDoc['CHAT']['@Id'], 'conv_' + os.path.basename(filename))
 
 
 def processTwitterFile(filename):
@@ -194,10 +207,7 @@ def processTwitterFile(filename):
         with ThreadPoolExecutor() as executor:
             def func(lines, i):
                 utters = [line[20:] for line in lines] # Ignore '123456789012345678: '
-                if STANFORD:
-                    utters = stanfordProcess(utters)
-                else:
-                    utters = nltkProcess(utters)
+                utters = processutterfunc(utters)
                 if WRITEOUT:
                     writexml(utters, 'twitter_' + str(i), 'conv_twitter_' + str(i))
             for i in range(len(alllines) // 4):
@@ -216,20 +226,26 @@ def processANCFile(filename):
             else:
                 sents = [turn['u']]
             for u in sents:
-                if isinstance(u['u'], list):
-                    us = u['u']
+                if 'u' in u:
+                    if isinstance(u['u'], list):
+                        us = u['u']
+                    else:
+                        us = [u['u']]
                 else:
-                    us = [u['u']]
+                    us = [u]
                 utter = []
                 for ut in us:
                     toks = []
-                    if isinstance(ut['tok'], list):
-                        toks = ut['tok']
-                    else:
-                        toks = [ut['tok']]
-                    for tok in toks:
-                        utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
-                utters.append(utter)
+                    if 'tok' in ut:
+                        if isinstance(ut['tok'], list):
+                            toks = ut['tok']
+                        else:
+                            toks = [ut['tok']]
+                        for tok in toks:
+                            if not isBad(tok['#text']):
+                                utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
+                if len(utter) > 0:
+                    utters.append(utter)
         if DEBUG:
             for utter in utters[20:]:
                 print(utter)
@@ -269,79 +285,83 @@ else:
 if WRITEOUT and not os.path.exists(outputDir):
     os.makedirs(name=outputDir)
 
-if args.train:
-    # Train POS tagger
-    train_sents = nltk.corpus.conll2000.tagged_sents()
-    ANCCorpus = nltk.corpus.TaggedCorpusReader('../OpenANC/processed/spoken', '.xml', sep='_')
-    train_sents = ANCCorpus.tagged_sents()
-    patterns = [
-        (r'^[Yy]eah$', 'UH'),
-        (r'^[Oo]+[Hh]+$', 'UH'),
-        (r'^[UuHhMm]+$', 'UH'),
-        (r'^[HhAa]+$', 'UH'),
-        (r'^okay$', 'JJ'),
-        (r'^[Oo][Kk]$', 'JJ'),
-
-        # The follow were copied from http://streamhacker.com/2008/11/10/part-of-speech-tagging-with-nltk-part-2/
-        (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),
-        (r'.*ould$', 'MD'),
-        (r'.*ing$', 'VBG'),
-        (r'.*ed$', 'VBD'),
-        (r'.*ness$', 'NN'),
-        (r'.*ment$', 'NN'),
-        (r'.*ful$', 'JJ'),
-        (r'.*ious$', 'JJ'),
-        (r'.*ble$', 'JJ'),
-        (r'.*ic$', 'JJ'),
-        (r'.*ive$', 'JJ'),
-        (r'.*ic$', 'JJ'),
-        (r'.*est$', 'JJ'),
-        (r'^a$', 'IN'),
-    ]
-    from nltk.tag import brill, brill_trainer
-    templates = brill.brill24()
-    from time import time
-    startTime = time()
-    tagger = nltk.TrigramTagger(train_sents,
-                    backoff=nltk.BigramTagger(train_sents,
-                    backoff=nltk.UnigramTagger(train_sents,
-                    backoff=nltk.AffixTagger(train_sents,
-                    backoff=nltk.RegexpTagger(patterns)))))
-    trainer = brill_trainer.BrillTaggerTrainer(tagger, templates)
-    tagger = trainer.train(train_sents, max_rules=100, min_score=3)
-    endTime = time()
-    print('Trained tagger in {:.2f} secs'.format(endTime - startTime))
-    with open('tagger.pickle', 'wb') as taggerSerial:
-        pickle.dump(tagger, taggerSerial)
-    
-    # Train sentence chunker
-    train_chunks = nltk.corpus.conll2000.chunked_sents()
-    tag_sents = [nltk.tree2conlltags(tree) for tree in train_chunks]
-    tag_chunks = [[(t, c) for (w, t, c) in chunk_tags] for chunk_tags in tag_sents]
-    startTime = time()
-    chunktagger = nltk.BigramTagger(tag_chunks,
-                    backoff=nltk.UnigramTagger(tag_chunks))
-    chunker = TagChunker(chunktagger)
-    endTime = time()
-    print('Trained chunker in {:.2f} secs'.format(endTime - startTime))
-    with open('chunker.pickle', 'wb') as chunkerSerial:
-        pickle.dump(chunker, chunkerSerial)
-    print()
+if STANFORD:
+    processutterfunc = stanfordProcess
 else:
-    with open('tagger.pickle', 'rb') as taggerSerial:
-        tagger = pickle.load(taggerSerial)
-    print("Loaded tagger")
-    with open('chunker.pickle', 'rb') as chunkerSerial:
-        chunker = pickle.load(chunkerSerial)
-    print("Loaded chunker")
+    processutterfunc = nltkProcess
+    if args.train:
+        # Train POS tagger
+        train_sents = nltk.corpus.conll2000.tagged_sents()
+        ANCCorpus = nltk.corpus.TaggedCorpusReader('../OpenANC/processed/spoken', '.xml', sep='_')
+        train_sents = ANCCorpus.tagged_sents()
+        patterns = [
+            (r'^[Yy]eah$', 'UH'),
+            (r'^[Oo]+[Hh]+$', 'UH'),
+            (r'^[UuHhMm]+$', 'UH'),
+            (r'^[HhAa]+$', 'UH'),
+            (r'^okay$', 'JJ'),
+            (r'^[Oo][Kk]$', 'JJ'),
+
+            # The follow were copied from http://streamhacker.com/2008/11/10/part-of-speech-tagging-with-nltk-part-2/
+            (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),
+            (r'.*ould$', 'MD'),
+            (r'.*ing$', 'VBG'),
+            (r'.*ed$', 'VBD'),
+            (r'.*ness$', 'NN'),
+            (r'.*ment$', 'NN'),
+            (r'.*ful$', 'JJ'),
+            (r'.*ious$', 'JJ'),
+            (r'.*ble$', 'JJ'),
+            (r'.*ic$', 'JJ'),
+            (r'.*ive$', 'JJ'),
+            (r'.*ic$', 'JJ'),
+            (r'.*est$', 'JJ'),
+            (r'^a$', 'IN'),
+        ]
+        from nltk.tag import brill, brill_trainer
+        templates = brill.brill24()
+        from time import time
+        startTime = time()
+        tagger = nltk.TrigramTagger(train_sents,
+                        backoff=nltk.BigramTagger(train_sents,
+                        backoff=nltk.UnigramTagger(train_sents,
+                        backoff=nltk.AffixTagger(train_sents,
+                        backoff=nltk.RegexpTagger(patterns)))))
+        trainer = brill_trainer.BrillTaggerTrainer(tagger, templates)
+        tagger = trainer.train(train_sents, max_rules=100, min_score=3)
+        endTime = time()
+        print('Trained tagger in {:.2f} secs'.format(endTime - startTime))
+        with open('tagger.pickle', 'wb') as taggerSerial:
+            pickle.dump(tagger, taggerSerial)
+        
+        # Train sentence chunker
+        train_chunks = nltk.corpus.conll2000.chunked_sents()
+        tag_sents = [nltk.tree2conlltags(tree) for tree in train_chunks]
+        tag_chunks = [[(t, c) for (w, t, c) in chunk_tags] for chunk_tags in tag_sents]
+        startTime = time()
+        chunktagger = nltk.BigramTagger(tag_chunks,
+                        backoff=nltk.UnigramTagger(tag_chunks))
+        chunker = TagChunker(chunktagger)
+        endTime = time()
+        print('Trained chunker in {:.2f} secs'.format(endTime - startTime))
+        with open('chunker.pickle', 'wb') as chunkerSerial:
+            pickle.dump(chunker, chunkerSerial)
+        print()
+    else:
+        with open('tagger.pickle', 'rb') as taggerSerial:
+            tagger = pickle.load(taggerSerial)
+        print("Loaded tagger")
+        with open('chunker.pickle', 'rb') as chunkerSerial:
+            chunker = pickle.load(chunkerSerial)
+        print("Loaded chunker")
 
 infile = args.infile
 if args.talkbank:
-    processfile = processTBFile
+    processfilefunc = processTBFile
 elif args.twitter:
-    processfile = processTwitterFile
+    processfilefunc = processTwitterFile
 elif args.anc:
-    processfile = processANCFile
+    processfilefunc = processANCFile
 else:
     raise Exception("Type of file(s) not specified")
 
@@ -350,9 +370,9 @@ if os.path.isdir(infile):
     # Do tree concurrently
     try:
         with ThreadPoolExecutor() as executor:
-            executor.map(processfile, files)
+            executor.map(processfilefunc, files)
     except:
         for f in files:
-            processfile(f)
+            processfilefunc(f)
 else:
-    processfile(infile)
+    processfilefunc(infile)

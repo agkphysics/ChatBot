@@ -1,75 +1,89 @@
+/* Copyright (C) 2016, 2017 Aaron Keesing
+ * 
+ * This file is part of CBR Chat Bot.
+ * 
+ * CBR Chat Bot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * CBR Chat Bot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package agk.chatbot;
 
-import jcolibri.casebase.LinealCaseBase;
 import jcolibri.cbraplications.StandardCBRApplication;
 import jcolibri.cbrcore.*;
 import jcolibri.exception.ExecutionException;
+import jcolibri.extensions.textual.IE.representation.Token;
 import jcolibri.method.retrieve.RetrievalResult;
 import jcolibri.method.retrieve.NNretrieval.NNConfig;
 import jcolibri.method.retrieve.NNretrieval.similarity.global.Average;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-
-import org.apache.commons.logging.*;
 
 /**
  * This class represents the main chat bot application.
  * 
  * @author Aaron Keesing
- * @version 1.8
+ * @version 2.0
  */
 public class ChatBot implements StandardCBRApplication {
     
-    private static Log logger = LogFactory.getLog(ChatBot.class);
+    public static final String VERSION_STRING = "2.0";
+
+    /**
+     * A limit on the difference between the most similar retrieved case and
+     * the least similar retrieved case.
+     */
+    private static final double SIMILARITY_TOLERANCE = 0.15;
+    
+    /**
+     * The minimum similarity required for retrieved cases.
+     * If the maximum retrieved similarity is less than this value, one of the
+     * filler responses in {@link ConfusedResponses} is output.
+     */
+    private static final double MIN_SIMILARITY = 0.5;
+    
+    /**
+     * The maximum number of cases to retrieve.
+     */
+    private static final int MAX_CASES_TO_KEEP = 15;
+    
+    /**
+     * The number of replies which need to be in the current thread in order to
+     * be stored as successful cases when the bot exits.
+     */
+    private static final int THREAD_THRESHOLD = 6;
     
     private Connector _connector;
     private CBRCaseBase _caseBase;
     private Path corpusPath;
     
     private List<ChatResponse> currentThread;
-    
-    /**
-     * A limit on the difference between the most similar retrieved case and
-     * the least similar retrieved case.
-     */
-    private final double SIMILARITY_TOLERANCE = 0.15;
-    /**
-     * The minimum similarity required for retrieved cases.
-     * If the maximum retrieved similarity is less than this value, one of the
-     * filler responses in {@link ConfusedResponses} is output.
-     */
-    private final double MIN_SIMILARITY = 0.5;
-    /**
-     * The maximum number of cases to retrieve.
-     */
-    private final int MAX_CASES_TO_KEEP = 15;
-    /**
-     * The number of replies which need to be in the current thread in order to
-     * be stored as successful cases when the bot exits.
-     */
-    private final int THREAD_THRESHOLD = 6;
+    private boolean finished = false;
 
-    /**
-     * @param args main arguments to application
-     */
     public static void main(String[] args) {
-    	
         Path pathToXmls = null;
+        if (args.length == 1) pathToXmls = Paths.get(args[0]);
+        
+        ChatBot bot;
         try {
-	        if (args.length == 1) pathToXmls = Paths.get(args[0]);
-	        else pathToXmls = Paths.get("../../TalkBank");
-        } catch (InvalidPathException e) {
-        	System.err.println("Not a valid path to corpus.");
-        	System.exit(1);
+            bot = new ChatBot(pathToXmls);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.out.println("Please provide a valid path to corpus.");
+            return;
         }
-        
-        ChatBot bot = new ChatBot(pathToXmls);
-        System.out.println();
-        System.out.println("Started bot application");
-        
-        TextSimilarity.init();
-        NLPText.initPipeline();
 
         try {
             bot.configure();
@@ -80,7 +94,7 @@ public class ChatBot implements StandardCBRApplication {
             String line;
             
             System.out.print("> ");
-            while (!(line = sc.nextLine()).equals("")) {
+            while (!(line = sc.nextLine()).equals("") && !bot.finished) {
                 CBRQuery query = bot.strToQuery(line);
                 bot.cycle(query);
                 System.out.print("> ");
@@ -94,17 +108,19 @@ public class ChatBot implements StandardCBRApplication {
         
         System.out.println();
         System.out.println("Finished bot application");
-        System.exit(0);
+        System.out.println("------------------------------------------------");
+        System.out.println();
     }
     
     /**
      * Converts a string of user input to a query object which
      * can then be used in the CBR application.
      * 
-     * @param line the string to convert to a query
+     * @param line
+     *             the string to convert to a query
      * @return the CBRQuery object for the converted query
      */
-    private CBRQuery strToQuery(String line) {
+    public CBRQuery strToQuery(String line) {
         CBRQuery query = new CBRQuery();
         ChatResponse stmt = new ChatResponse();
         
@@ -116,28 +132,66 @@ public class ChatBot implements StandardCBRApplication {
         return query;
     }
     
+    /**
+     * Stores the current sequence of statements in the case base, if the
+     * length of the current thread is above the {@link ChatBot#THREAD_THRESHOLD}.
+     */
+    private void storeCurrentThread() {
+        if (currentThread.size() >= THREAD_THRESHOLD) {
+            List<CBRCase> casesToStore = new ArrayList<>();
+            for (int i = 0; i < currentThread.size() - 1; i++) {
+                CBRCase c = new CBRCase();
+                c.setDescription(currentThread.get(i));
+                c.setSolution(currentThread.get(i + 1));
+                casesToStore.add(c);
+            }
+            _caseBase.learnCases(casesToStore);
+        }
+    }
 
     /**
      * Initialise the chat bot with the path to the processed XML corpus
      * 
-     * @param p the path to the corpus
+     * @param p
+     *          the path to the corpus
+     * @throws FileNotFoundException
      */
-    public ChatBot(Path p) {
-        corpusPath = p;
+    public ChatBot(Path p) throws FileNotFoundException {
+        if (p != null) corpusPath = p;
+        else if (Files.exists(Paths.get("xmlconv"))) corpusPath = Paths.get("xmlconv");
+        else if (Files.exists(Paths.get("../xmlconv"))) corpusPath = Paths.get("../xmlconv");
+        else if (Files.exists(Paths.get("lib/xmlconv"))) corpusPath = Paths.get("lib/xmlconv");
+        else throw new FileNotFoundException("No valid corpus path given or found.");
+        
+        System.out.println();
+        System.out.println("Started bot application -- Chat Bot version " + VERSION_STRING);
+        System.out.println("-----------------------------------------------");
+        System.out.println();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jcolibri.cbraplications.StandardCBRApplication#configure()
+    /**
+     * Initialises the WordNet dictionary, NLP pipeline, corpus connector and
+     * current conversation thread.
      */
     @Override
     public void configure() throws ExecutionException {
-        _connector = new ProcessedXMLConnector(corpusPath);
-        _caseBase = new LinealCaseBase();
-        currentThread = new ArrayList<>();
+        try {
+            TextSimilarity.init();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            throw new ExecutionException(e1);
+        }
+        NLPText.initPipeline();
         
-        logger.debug("Finished configure()");
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        _connector = new ProcessedXMLConnector(corpusPath);
+        _caseBase = new InMemoryCaseBase();
+        currentThread = new ArrayList<>();
     }
 
     /*
@@ -166,11 +220,12 @@ public class ChatBot implements StandardCBRApplication {
         
         double topEval = topRes.get(0).getEval();
         
-        
         ChatResponse response;
         if (topEval < MIN_SIMILARITY) {
             response = new ChatResponse();
             response.setText(ConfusedResponses.STATEMENT_ONE);
+            storeCurrentThread();
+            currentThread.clear();
         } else {
             for (RetrievalResult r = resIter.next();
             		topEval - r.getEval() < SIMILARITY_TOLERANCE && r.getEval() > MIN_SIMILARITY && topRes.size() <= MAX_CASES_TO_KEEP;
@@ -185,38 +240,40 @@ public class ChatBot implements StandardCBRApplication {
         currentThread.add((ChatResponse)query.getDescription());
         currentThread.add(response);
         System.out.println(response.toString());
-        System.out.println();
         
-        logger.debug("Finished cycle()");
+        for (Token t : ((ChatResponse)query.getDescription()).getText().getAllTokens()) {
+            String word = t.getRawContent().toLowerCase();
+            if (word.contains("bye") || word.contains("goodbye")) {
+                finished = true;
+            }
+        }
+        System.out.println();
+    }
+    
+    /**
+     * This method is a useful because cycle has return type {@code void}.
+     * 
+     * @return
+     *         the last response given by the bot
+     */
+    public ChatResponse getLastResponse() {
+        return currentThread.get(currentThread.size() - 1);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jcolibri.cbraplications.StandardCBRApplication#postCycle()
+    /**
+     * Closes the corpus connector and case base.
      */
     @Override
     public void postCycle() throws ExecutionException {
-        if (currentThread.size() >= THREAD_THRESHOLD) {
-            List<CBRCase> casesToStore = new ArrayList<>();
-            for (int i = 0; i < currentThread.size() - 1; i++) {
-                CBRCase c = new CBRCase();
-                c.setDescription(currentThread.get(i));
-                c.setSolution(currentThread.get(i + 1));
-                casesToStore.add(c);
-            }
-            _caseBase.learnCases(casesToStore);
-        }
+        storeCurrentThread();
+        
         _caseBase.close();
         _connector.close();
-        
-        logger.debug("Finished postCycle()");
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jcolibri.cbraplications.StandardCBRApplication#preCycle()
+    /**
+     * Generates all the statement-response pairs and stores them as cases in
+     * memory.
      */
     @Override
     public CBRCaseBase preCycle() throws ExecutionException {
@@ -224,9 +281,8 @@ public class ChatBot implements StandardCBRApplication {
         _caseBase.init(_connector);
         long t1 = System.currentTimeMillis();
         System.out.println(String.format("Generated %d English response pairs in %.2f seconds.", _caseBase.getCases().size(), (t1 - t0) / 1000.0));
-        
-        logger.debug("Finished preCycle()");
         System.out.println();
+        
         return _caseBase;
     }
 

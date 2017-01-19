@@ -16,20 +16,31 @@
  * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package agk.chatbot;
+/* Custom Stylesheet */
 
 /**
- * This class holds a number of phrases that can be used to change the subject
- * of a conversation if the bot doesn't find (m)any similar cases.
- * 
- * @author aaron
+ * Made By MaterializeCSS.com
  */
-final class ConfusedResponses {
-    
-    final static String QUESTION_ONE = "I'm not sure, but what are you up to these days?";
-    final static String QUESTION_TWO = "I don't know. How are you?";
-    
-    final static String STATEMENT_ONE = "I'm not sure about that.";
-    final static String STATEMENT_TWO = "I don't know.";
-    final static String STATEMENT_THREE = "I don't understand.";
+
+.icon-block {
+  padding: 0 15px;
+}
+.icon-block .material-icons {
+	font-size: inherit;
+}
+
+.github-logo {
+    display: inline;
+    height: 1.5em;
+    vertical-align: middle;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
 }

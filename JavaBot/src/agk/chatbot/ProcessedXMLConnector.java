@@ -1,3 +1,21 @@
+/* Copyright (C) 2016, 2017 Aaron Keesing
+ * 
+ * This file is part of CBR Chat Bot.
+ * 
+ * CBR Chat Bot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * CBR Chat Bot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package agk.chatbot;
 
 import java.io.*;
@@ -37,14 +55,16 @@ public class ProcessedXMLConnector implements Connector {
     private Path xmlPath;
     
     /**
-     *
+     * Initialises the connector with the given path.
+     * 
+     * @param xmlPath
+     *                the path to the corpus
      */
     public ProcessedXMLConnector(Path xmlPath) {
         this.xmlPath = xmlPath;
     	System.out.println("Using corpus at " + xmlPath.toAbsolutePath().normalize().toString());
         
         xmlFiles = new ArrayList<>();
-        
         try {
             Files.walkFileTree(xmlPath, new FileVisitor<Path>() {
                 @Override
@@ -75,6 +95,14 @@ public class ProcessedXMLConnector implements Connector {
         System.out.println("Found " + xmlFiles.size() + " processed xml files.");
     }
     
+    /**
+     * Converts a file containing a conversation to a list of {@link CBRCase}
+     * objects.
+     * 
+     * @param file
+     *             a file that contains a conversation in XML format
+     * @return The cases extracted from the file
+     */
     public static Collection<CBRCase> convertFileToCases(File file) {
         List<CBRCase> cases = new ArrayList<>();
         try {
@@ -106,10 +134,13 @@ public class ProcessedXMLConnector implements Connector {
                     Element w = (Element)toks.item(j);
                     String pos = w.getAttribute("pos");
                     String stem = w.getAttribute("stem");
-                	Token t = new Token(w.getTextContent());
+                    String ner = w.getAttribute("ner");
+                	NLPToken t = new NLPToken(w.getTextContent());
                 	t.setPostag(pos);
                 	t.setStem(stem);
-                	t.setMainName(!w.getAttribute("ner").equals("O"));
+                    t.setMainName(!ner.equals("O"));
+                	t.setNerTag(ner);
+                	t.setStopWord(NLPText.isStopWord(w.getTextContent()));
                 	tokens.add(t);
                 	words.add(w.getTextContent());
                 }
@@ -133,10 +164,13 @@ public class ProcessedXMLConnector implements Connector {
                     Element w = (Element)toks.item(j);
                     String pos = w.getAttribute("pos");
                     String stem = w.getAttribute("stem");
-                    Token t = new Token(w.getTextContent());
+                    String ner = w.getAttribute("ner");
+                    NLPToken t = new NLPToken(w.getTextContent());
                     t.setPostag(pos);
                     t.setStem(stem);
-                    t.setMainName(!w.getAttribute("ner").equals("O"));
+                    t.setMainName(!ner.equals("O"));
+                    t.setStopWord(NLPText.isStopWord(w.getTextContent()));
+                    t.setNerTag(ner);
                     tokens.add(t);
                     words.add(w.getTextContent());
                 }
@@ -248,7 +282,7 @@ public class ProcessedXMLConnector implements Connector {
                 Element utter = doc.createElement("u");
                 conversation.appendChild(utter);
                 for (Token _t : desc.getText().getAllTokens()) {
-                    NLPToken t = (NLPToken)_t; // TODO: Change
+                    NLPToken t = (NLPToken)_t;
                     Element tok = doc.createElement("tok");
                     tok.setAttribute("pos", t.getPostag());
                     tok.setAttribute("stem", t.getStem());
@@ -261,7 +295,7 @@ public class ProcessedXMLConnector implements Connector {
                 Element utter2 = doc.createElement("u");
                 conversation.appendChild(utter2);
                 for (Token _t : sol.getText().getAllTokens()) {
-                    NLPToken t = (NLPToken)_t; // TODO: Change
+                    NLPToken t = (NLPToken)_t;
                     Element tok = doc.createElement("tok");
                     tok.setAttribute("pos", t.getPostag());
                     tok.setAttribute("stem", t.getStem());
