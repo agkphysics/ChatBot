@@ -9,8 +9,8 @@ of Auckland.
 
 ## Installation
 ### Java
-See the respective README.txt files in JavaBot/lib and JavaBot/opennlp-models
-for instructions on how to install the required java dependencies.
+See the respective README.txt file in JavaBot/lib for instructions on how to
+install the required java dependencies.
 
 ### Python Script
 For processing the XML files using the python script you will need to download
@@ -29,10 +29,10 @@ files, as well as [OANC](http://www.anc.org/data/oanc/contents/) files from the
 [American National Corpus](http://www.anc.org/ "ANC"), which have been converted
 to [inline XML](http://www.anc.org/software/anc-tool/ "ANC Conversion Tool").
 
-* `python processXML.py -p (-t|-a) -s /path/to/file` prints details from
+* `python processXML.py -p -s (-t|-a|-w) /path/to/file` prints details from
 processing a single file.
-* `python processXML.py -s (-t|-a) -o outputdir /path/to/corpus` process all files
-recursively in /path/to/corpus and puts the processed files to outputdir/
+* `python processXML.py -s -o outputdir (-t|-a|-w) /path/to/corpus` process all
+files recursively in /path/to/corpus and puts the processed files to outputdir/
 * `python processXML.py -h` prints all available options.
 
 

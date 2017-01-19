@@ -1,11 +1,32 @@
+/* Copyright (C) 2016, 2017 Aaron Keesing
+ * 
+ * This file is part of CBR Chat Bot.
+ * 
+ * CBR Chat Bot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * CBR Chat Bot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package agk.chatbot;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import edu.mit.jwi.IRAMDictionary;
 import edu.mit.jwi.RAMDictionary;
+import edu.mit.jwi.data.ILoadPolicy;
 import edu.mit.jwi.item.*;
 import edu.mit.jwi.morph.IStemmer;
 import edu.mit.jwi.morph.WordnetStemmer;
@@ -15,33 +36,75 @@ import jcolibri.extensions.textual.IE.representation.Token;
 import jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction;
 
 /**
- * This class represents a text similarity function for the chat bot.
+ * This class represents the text similarity function for the chat bot.
+ * It uses a combination of word order and semantic similarity measures to
+ * determine the similarity of two sentences.
  * 
  * @author Aaron
  */
 public class TextSimilarity implements LocalSimilarityFunction {
 
+    /**
+     * The threshold above which sentences with different lengths are
+     * automatically assumed dissimilar.
+     */
     private static final int SIZE_DIFFERENCE_THRESHOLD = 10;
-    private static final double MIN_SIMILARITY = 0.3;
+    /**
+     * The minimum similarity between words, to be included in the semantic
+     * vector.
+     */
+    private static final double MIN_SIMILARITY = 0.2;
+    /**
+     * The weighting of the overall similarity between semantic and word-order.
+     */
     private static final double DELTA = 0.75;
     
     private static IRAMDictionary dict;
     private static IStemmer stemmer;
 
     /**
-     * Initialises the {@link TextSimilarity} object. Loads the wordnet
-     * dictionary into memory in the form of a {@link RAMDictionary} object.
+     * Creates a new {@link TextSimilarity} object.
      */
-    public TextSimilarity() {
-        init();
+    public TextSimilarity() {}
+    
+    /**
+     * Initialises WordNet using trial and error to find a valid path to either
+     * the WordNet database or the serialised file <code>wn.dict</code>.
+     * 
+     * Either this or {@link TextSimilarity#init(URL)} must be called before
+     * any subsequent calls to {@link TextSimilarity#similarity(String, String, POS)}.
+     * 
+     * @throws IOException
+     */
+    public static void init() throws IOException {
+        try {
+            if (Files.exists(Paths.get("wordnet/dict"))) init(new File("wordnet/dict").toURI().toURL());
+            else if (Files.exists(Paths.get("../../wordnet/dict"))) init(new File("../../wordnet/dict").toURI().toURL());
+            else if (Files.exists(Paths.get("lib/wn.dict"))) init(new File("lib/wn.dict").toURI().toURL());
+            else init(TextSimilarity.class.getClassLoader().getResource("wn.dict"));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void init() {
+    /**
+     * Loads the wordnet dictionary into memory in the form of a
+     * {@link RAMDictionary} object. Also loads the stemmer.
+     * 
+     * Either this or {@link TextSimilarity#init()} must be called before
+     * any subsequent calls to {@link TextSimilarity#similarity(String, String, POS)}.
+     * 
+     * @param url
+     *            the URL to either the file <code>wn.dict</code> or the WordNet
+     *            DB.
+     */
+    public static void init(URL url) throws IOException {
         if (dict == null) {
-            dict = new RAMDictionary(new File("../../wordnet/dict"));
+            dict = new RAMDictionary(url, ILoadPolicy.IMMEDIATE_LOAD);
             try {
                 dict.open();
                 dict.load(true);
+                if (!dict.isLoaded()) throw new Exception();
             } catch (Exception e) {
                 System.err.println("Error loading wordnet into memory.");
                 e.printStackTrace();
@@ -54,12 +117,17 @@ public class TextSimilarity implements LocalSimilarityFunction {
         }
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * Computes the similarity of two sentences as a real number between 0 and
+     * 1.
      * 
-     * @see
-     * jcolibri.method.retrieve.NNretrieval.similarity.LocalSimilarityFunction#
-     * compute(java.lang.Object, java.lang.Object)
+     * @param caseObject
+     *                    the case object
+     * @param queryObject
+     *                    the query object
+     * @return
+     *         a <code>double</code> from 0 to 1 inclusive that represents
+     *         the similarity of the two sentences.
      */
     @Override
     public double compute(Object caseObject, Object queryObject) throws NoApplicableSimilarityFunctionException {        
@@ -93,24 +161,28 @@ public class TextSimilarity implements LocalSimilarityFunction {
         
         Set<Token> jointSet = new HashSet<>();
         Set<String> jointWordSet = new HashSet<>();
-        // TODO: Punctuation handling
         for (int i = 0; i < sent1Set.size(); i++) {
             Token t = sent1Set.get(i);
-            if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
-                jointSet.add(t);
+            // Ignore words not very necessary to convey meaning.
+            if (!t.isStopWord() || !t.getPostag().equals(".")) {
+                if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
+                    jointSet.add(t);
+                }
+                jointWordSet.add(t.getRawContent().toLowerCase());
+                s1WordSet.add(t.getRawContent().toLowerCase());
+                s1WordMap.put(t.getRawContent().toLowerCase(), i);
             }
-            jointWordSet.add(t.getRawContent().toLowerCase());
-            s1WordSet.add(t.getRawContent().toLowerCase());
-            s1WordMap.put(t.getRawContent().toLowerCase(), i);
         }
         for (int i = 0; i < sent2Set.size(); i++) {
             Token t = sent2Set.get(i);
-            if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
-                jointSet.add(t);
+            if (!t.isStopWord() || !t.getPostag().equals(".")) {
+                if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
+                    jointSet.add(t);
+                }
+                jointWordSet.add(t.getRawContent().toLowerCase());
+                s2WordSet.add(t.getRawContent().toLowerCase());
+                s2WordMap.put(t.getRawContent().toLowerCase(), i);
             }
-            jointWordSet.add(t.getRawContent().toLowerCase());
-            s2WordSet.add(t.getRawContent().toLowerCase());
-            s2WordMap.put(t.getRawContent().toLowerCase(), i);
         }
         
         double[] s1 = new double[jointSet.size()];
@@ -248,8 +320,6 @@ public class TextSimilarity implements LocalSimilarityFunction {
      * @return the similarity score for the two words, in the range [0, 1]
      */
     public static double similarity(String w1, String w2, POS pos) {
-        init();
-        
         List<String> w1Stems = stemmer.findStems(w1, pos);
         List<String> w2Stems = stemmer.findStems(w2, pos);
         if (w1Stems.isEmpty() || w2Stems.isEmpty()) {
@@ -377,7 +447,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
              * Iterate through all pairs of words and determine minimum distance
              * amongst adjectives, if they are somewhat related.
              * 
-             * TODO: Implement using noun hierarchy via derived form
+             * TODO: Implement using noun hierarchy via derived form?
              */
             for (IWordID w1ID : w1idx.getWordIDs()) {
                 for (IWordID w2ID : w2idx.getWordIDs()) {

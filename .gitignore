@@ -1,5 +1,8 @@
 bin/
 *.class
 obj/
-/JavaBot/opennlp-models
-/JavaBot/lib
+lib/
+build/
+.vscode/
+.settings/
+xmlconv/
