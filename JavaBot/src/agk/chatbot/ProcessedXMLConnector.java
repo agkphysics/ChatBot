@@ -113,11 +113,9 @@ public class ProcessedXMLConnector implements Connector {
             
             for (int i = 0; i < utters.getLength(); i++) {
                 ChatResponse stmt = new ChatResponse();
-                ChatResponse resp = new ChatResponse();
                 CBRCase c = new CBRCase();
                 
-                stmt.setId(root.getAttribute("id"));
-                resp.setId(root.getAttribute("id"));
+                stmt.setId(root.getAttribute("id") + i);
                 
                 NLPText txt;
                 String utterance;
@@ -151,44 +149,17 @@ public class ProcessedXMLConnector implements Connector {
                 sent.addTokens(tokens);
                 para.addSentence(sent);
                 txt.addParagraph(para);
-                stmt.setText(txt);            
-                
-                tokens.clear();
-                words.clear();
-                
-                if (i + 1 == utters.getLength() - 1) break;
-                u = (Element)utters.item(i + 1);
-                toks = u.getElementsByTagName("t");
-                // Convert response
-                for (int j = 0; j < toks.getLength(); j++) {
-                    Element w = (Element)toks.item(j);
-                    String pos = w.getAttribute("pos");
-                    String stem = w.getAttribute("stem");
-                    String ner = w.getAttribute("ner");
-                    NLPToken t = new NLPToken(w.getTextContent());
-                    t.setPostag(pos);
-                    t.setStem(stem);
-                    t.setMainName(!ner.equals("O"));
-                    t.setStopWord(NLPText.isStopWord(w.getTextContent()));
-                    t.setNerTag(ner);
-                    tokens.add(t);
-                    words.add(w.getTextContent());
-                }
-                utterance = String.join(" ", words);
-                sent = new Sentence(utterance);
-                para = new Paragraph(utterance);
-                txt = new NLPText(utterance);
-                sent.addTokens(tokens);
-                para.addSentence(sent);
-                txt.addParagraph(para);
-                resp.setText(txt);
+                stmt.setText(txt);
                 
                 c.setDescription(stmt);
-                c.setSolution(resp);
                 cases.add(c);
             }
         } catch (DOMException | ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
+        }
+        
+        for (int i = 0; i < cases.size() - 1; i++) {
+            cases.get(i).setSolution(cases.get(i + 1).getDescription());
         }
         
         return cases;

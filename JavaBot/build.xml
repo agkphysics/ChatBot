@@ -20,22 +20,24 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
 
 <project name="CBR Chat Bot" default="jar-nodeps">
 
-    <property name="bot.version" value="2.0" />
-    <property name="src.dir" value="src" />
-    <property name="lib.dir" value="lib" />
-    <property name="wn.dir" value="wordnet" />
-    <property name="build.dir" value="build" />
-    <property name="xml.dir" value="../../xmlconv"/>
-    <property name="web.dir" value="web"/>
-
+    <property name="bot.version" value="2.1"/>
     
-    <record name="${build.dir}/build.log" loglevel="verbose" action="start"/>
+    <property name="src.dir" value="src"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="build.dir" value="build"/>
+    <property name="web.dir" value="web"/>
+    <property name="debug" value="on"/>
+    
+    <!-- User properties -->
+    <property name="wn.dir" value="wordnet"/>
+    <property name="xml.dir" value="xmlconv"/>
+    <property name="web.deploy.dir" value="D:\\Programs\\apache-tomcat-8.5.9\\webapps\\ROOT"/>
 
     <path id="classpath">
         <fileset dir="${lib.dir}">
-            <include name="*.jar" />
+            <include name="*.jar"/>
         </fileset>
-        <pathelement path="${build.dir}/bin" />
+        <pathelement path="${build.dir}/bin"/>
     </path>
 
     <target name="header">
@@ -45,23 +47,23 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
     </target>
 
     <target name="build" depends="header" description="Build classes">
-        <mkdir dir="${build.dir}" />
-        <mkdir dir="${build.dir}/bin" />
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.dir}/bin"/>
 
         <echo>Compiling files...</echo>
-        <javac destdir="${build.dir}/bin" includeantruntime="false">
-            <src path="${src.dir}" />
-            <classpath refid="classpath" />
+        <javac destdir="${build.dir}/bin" includeantruntime="false" debug="${debug}">
+            <src path="${src.dir}"/>
+            <classpath refid="classpath"/>
         </javac>
     </target>
 
-    <target name="package" depends="zip,jar-includedeps,jar-nodeps" description="Performs zip, jar-nodeps and jar-includedeps"/>
+    <target name="package-all" depends="zip,jar-includedeps,jar-nodeps" description="Performs zip, jar-nodeps and jar-includedeps"/>
     
     <target name="jar-includedeps" depends="build" description="Build a jarfile containing the model and WordNet dictionary">
         <echo>Copying included files...</echo>
         <copy todir="${build.dir}/lib">
             <fileset dir="${lib.dir}">
-                <include name="gate-EN-twitter.model" />
+                <include name="gate-EN-twitter.model"/>
                 <include name="wn.dict" />
             </fileset>
         </copy>
@@ -70,23 +72,23 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
         <delete file="${build.dir}/JavaBot-deps.jar"/>
         <jar destfile="${build.dir}/JavaBot-deps.jar" basedir="${build.dir}/bin">
             <fileset dir="${build.dir}/lib">
-                <include name="gate-EN-twitter.model" />
-                <include name="wn.dict" />
+                <include name="gate-EN-twitter.model"/>
+                <include name="wn.dict"/>
             </fileset>
 
             <manifest>
-                <attribute name="Main-Class" value="agk.chatbot.ChatBot" />
-                <attribute name="Class-Path" value=". lib/abstractparser.jar lib/aduna-clustermap-2006.1-resources.jar lib/aduna-clustermap-2006.1.jar lib/antlr-2.7.6.jar lib/api.jar lib/arq.jar lib/asm-attrs.jar lib/asm.jar lib/aterm-java-1.6.jar lib/axis.jar lib/bsh-2.0b4.jar lib/c3p0-0.9.0.jar lib/carrot2-filter-case-normalizer.jar lib/carrot2-filter-fuzzyants.jar lib/carrot2-filter-haog.jar lib/carrot2-filter-lingo.jar lib/carrot2-filter-stc.jar lib/carrot2-filter-trc.jar lib/carrot2-input-lucene.jar lib/carrot2-input-msnapi.jar lib/carrot2-input-yahooapi.jar lib/carrot2-local-core.jar lib/carrot2-snowball-stemmers.jar lib/carrot2-stemmer-stempelator.jar lib/carrot2-util-common.jar lib/carrot2-util-tokenizer.jar lib/cglib-2.1.3.jar lib/Chart2D.jar lib/colt-1.0.3-trimmed.jar lib/commons-codec-1.3.jar lib/commons-collections-3.2.jar lib/commons-discovery-0.2.jar lib/commons-httpclient-3.0.1.jar lib/commons-lang-2.1.jar lib/commons-logging-1.1.jar lib/commons-pool-1.3.jar lib/concurrent.jar lib/db-4.3.29.jar lib/dom4j-1.6.1.jar lib/easymock-1.2_Java1.5.jar lib/format.jar lib/forms-1.0.7.jar lib/gate.jar lib/grok-0.7.0.jar lib/hessian-3.0.20.jar lib/hibernate3.jar lib/hivemind-1.1.jar lib/hivemind-jmx-1.1.jar lib/hivemind-lib-1.1.jar lib/hsqldb.jar lib/icu4j_3_4.jar lib/impl.jar lib/inference.jar lib/InfoVisual-CB.jar lib/io.jar lib/iri.jar lib/jal.jar lib/Jama-1.0.2.jar lib/jasper-compiler-jdt.jar lib/java-string-similarity-0.19.jar lib/javassist-3.0.jar lib/jaxen-1.1-beta-6.jar lib/jaxrpc.jar lib/jcolibri2.jar lib/jdic.jar lib/jdom.jar lib/je.jar lib/jena.jar lib/jetty.jar lib/json.jar lib/jta.jar lib/junit.jar lib/jwnl.jar lib/looks-2.0.4.jar lib/lucene-analyzers-2.1.0.jar lib/lucene-ant-2.1.0.jar lib/lucene-benchmark-2.1.0.jar lib/lucene-core-2.1.0.jar lib/lucene-highlighter-2.1.0.jar lib/lucene-lucli-2.1.0.jar lib/lucene-memory-2.1.0.jar lib/lucene-misc-2.1.0.jar lib/lucene-queries-2.1.0.jar lib/lucene-regex-2.1.0.jar lib/lucene-similarity-2.1.0.jar lib/lucene-spellchecker-2.1.0.jar lib/lucene-surround-2.1.0.jar lib/lucene-swing-2.1.0.jar lib/lucene-wordnet-2.1.0.jar lib/lucene-xml-query-parser-2.1.0.jar lib/maxent.jar lib/mysql-connector-java-3.0.11-stable-bin.jar lib/ontobridge.jar lib/opennlp.jar lib/oro-2.0.6.jar lib/owl-servlet.jar lib/servlet.jar lib/pellet.jar lib/rdfapi.jar lib/rdfparser.jar lib/relaxngDatatype.jar lib/rules.jar lib/saaj.jar lib/SnowBall.jar lib/spamcorpus.jar lib/stax-1.1.2-dev.jar lib/stax-api-1.0.1.jar lib/stempel-1.0-dw.jar lib/stempelator-1.0.jar lib/trove.jar lib/validation.jar lib/violinstrings-1.0.2.jar lib/wordnetbridge.jar lib/wsdl4j-1.5.1.jar lib/wstx-asl-2.8.jar lib/xercesImpl.jar lib/xsdlib.jar lib/edu.mit.jwi_2.4.0.jar lib/stanford-corenlp-3.6.0-models.jar lib/stanford-corenlp-3.6.0.jar lib/joda-time.jar lib/jollyday.jar lib/log4j-1.2.14.jar lib/slf4j-api.jar lib/slf4j-simple.jar lib/xom.jar lib/javax.json.jar" />
+                <attribute name="Main-Class" value="agk.chatbot.ChatBot"/>
+                <attribute name="Class-Path" value=". lib/abstractparser.jar lib/aduna-clustermap-2006.1-resources.jar lib/aduna-clustermap-2006.1.jar lib/antlr-2.7.6.jar lib/api.jar lib/arq.jar lib/asm-attrs.jar lib/asm.jar lib/aterm-java-1.6.jar lib/axis.jar lib/bsh-2.0b4.jar lib/c3p0-0.9.0.jar lib/carrot2-filter-case-normalizer.jar lib/carrot2-filter-fuzzyants.jar lib/carrot2-filter-haog.jar lib/carrot2-filter-lingo.jar lib/carrot2-filter-stc.jar lib/carrot2-filter-trc.jar lib/carrot2-input-lucene.jar lib/carrot2-input-msnapi.jar lib/carrot2-input-yahooapi.jar lib/carrot2-local-core.jar lib/carrot2-snowball-stemmers.jar lib/carrot2-stemmer-stempelator.jar lib/carrot2-util-common.jar lib/carrot2-util-tokenizer.jar lib/cglib-2.1.3.jar lib/Chart2D.jar lib/colt-1.0.3-trimmed.jar lib/commons-codec-1.3.jar lib/commons-collections-3.2.jar lib/commons-discovery-0.2.jar lib/commons-httpclient-3.0.1.jar lib/commons-lang-2.1.jar lib/commons-logging-1.1.jar lib/commons-pool-1.3.jar lib/concurrent.jar lib/db-4.3.29.jar lib/dom4j-1.6.1.jar lib/easymock-1.2_Java1.5.jar lib/format.jar lib/forms-1.0.7.jar lib/gate.jar lib/grok-0.7.0.jar lib/hessian-3.0.20.jar lib/hibernate3.jar lib/hivemind-1.1.jar lib/hivemind-jmx-1.1.jar lib/hivemind-lib-1.1.jar lib/hsqldb.jar lib/icu4j_3_4.jar lib/impl.jar lib/inference.jar lib/InfoVisual-CB.jar lib/io.jar lib/iri.jar lib/jal.jar lib/Jama-1.0.2.jar lib/jasper-compiler-jdt.jar lib/java-string-similarity-0.19.jar lib/javassist-3.0.jar lib/jaxen-1.1-beta-6.jar lib/jaxrpc.jar lib/jcolibri2.jar lib/jdic.jar lib/jdom.jar lib/je.jar lib/jena.jar lib/jetty.jar lib/json.jar lib/jta.jar lib/junit.jar lib/jwnl.jar lib/looks-2.0.4.jar lib/lucene-analyzers-2.1.0.jar lib/lucene-ant-2.1.0.jar lib/lucene-benchmark-2.1.0.jar lib/lucene-core-2.1.0.jar lib/lucene-highlighter-2.1.0.jar lib/lucene-lucli-2.1.0.jar lib/lucene-memory-2.1.0.jar lib/lucene-misc-2.1.0.jar lib/lucene-queries-2.1.0.jar lib/lucene-regex-2.1.0.jar lib/lucene-similarity-2.1.0.jar lib/lucene-spellchecker-2.1.0.jar lib/lucene-surround-2.1.0.jar lib/lucene-swing-2.1.0.jar lib/lucene-wordnet-2.1.0.jar lib/lucene-xml-query-parser-2.1.0.jar lib/maxent.jar lib/mysql-connector-java-3.0.11-stable-bin.jar lib/ontobridge.jar lib/opennlp.jar lib/oro-2.0.6.jar lib/owl-servlet.jar lib/servlet.jar lib/pellet.jar lib/rdfapi.jar lib/rdfparser.jar lib/relaxngDatatype.jar lib/rules.jar lib/saaj.jar lib/SnowBall.jar lib/spamcorpus.jar lib/stax-1.1.2-dev.jar lib/stax-api-1.0.1.jar lib/stempel-1.0-dw.jar lib/stempelator-1.0.jar lib/trove.jar lib/validation.jar lib/violinstrings-1.0.2.jar lib/wordnetbridge.jar lib/wsdl4j-1.5.1.jar lib/wstx-asl-2.8.jar lib/xercesImpl.jar lib/xsdlib.jar lib/edu.mit.jwi_2.4.0.jar lib/stanford-corenlp-3.6.0-models.jar lib/stanford-corenlp-3.6.0.jar lib/joda-time.jar lib/jollyday.jar lib/log4j-1.2.14.jar lib/slf4j-api.jar lib/slf4j-simple.jar lib/xom.jar lib/javax.json.jar"/>
             </manifest>
         </jar>
     </target>
     
     <target name="jar-nodeps" depends="build" description="Build a jarfile with only the classes required for the chatbot.">
         <echo>Compressing JAR archive...</echo>
-        <delete file="${build.dir}/JavaBot.jar"/>
-        <jar destfile="${build.dir}/JavaBot-deps.jar" basedir="${build.dir}/bin">
+        <delete file="${build.dir}/JavaBot-nodeps.jar"/>
+        <jar destfile="${build.dir}/JavaBot-nodeps.jar" basedir="${build.dir}/bin">
             <manifest>
-                <attribute name="Main-Class" value="agk.chatbot.ChatBot" />
+                <attribute name="Main-Class" value="agk.chatbot.ChatBot"/>
             </manifest>
         </jar>
     </target> 
@@ -121,22 +123,49 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
     </target>
 
     <target name="clean" description="Clean build files">
-        <echo>Cleaning ${build.dir}/*.class ...</echo>
-        <delete>
+        <echo>Cleaning build ...</echo>
+        <delete failonerror="false">
             <fileset dir="${build.dir}/bin">
                 <include name="**/*.class" />
+            </fileset>
+            <fileset dir="${build.dir}/web/classes">
+                <include name="**/*.class"/>
             </fileset>
         </delete>
     </target>
     
     <target name="web" depends="build" description="Build the web project">
-        
+        <echo>Creating web files...</echo>
+        <mkdir dir="${build.dir}/web"/>
+        <copy todir="${build.dir}/web">
+            <fileset dir="${web.dir}">
+                <exclude name="**/lib/"/>
+                <exclude name="**/xmlconv/"/>
+                <exclude name="**/typings/"/>
+                <exclude name="*.json"/>
+                <exclude name="*.log"/>
+            </fileset>
+        </copy>
+        <copy todir="${build.dir}/web/WEB-INF/classes">
+            <fileset dir="${build.dir}/bin">
+                <include name="**/*.class"/>
+            </fileset>
+            <fileset dir="${lib.dir}">
+                <include name="gate-EN-twitter.model"/>
+                <include name="wn.dict"/>
+            </fileset>
+        </copy>
     </target>
-
+    
+    <target name="deploy-web" depends="web" description="Deploy to local Tomcat webserver">
+        <echo>Deploying to webserver...</echo>
+        <copy todir="${web.deploy.dir}" verbose="true">
+            <fileset dir="${build.dir}/web"/>
+        </copy>
+    </target>
 
     <target name="ChatBot" description="Run the bot">
         <java classname="agk.chatbot.ChatBot" failonerror="true" fork="yes">
-            <arg line="..\..\xmlconv" />
             <classpath refid="classpath"/>
         </java>
     </target>

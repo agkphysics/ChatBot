@@ -69,7 +69,7 @@ public class BotServer implements HttpHandler {
                     e.printStackTrace();
                 }
             }
-        }).start();;
+        }).start();
         
         HttpServer server;
         try {
@@ -111,7 +111,7 @@ public class BotServer implements HttpHandler {
                 Map<String, String> map = queryToMap(strWriter.toString());
                 String chat = map.get("c");
                 
-                if (requestHeaders.getFirst("Content-Type").equals("application/x-www-form-urlencoded")) {
+                if (requestHeaders.getFirst("Content-Type").startsWith("application/x-www-form-urlencoded")) {
                     if (chat.length() == 0 || chat.length() > 140) {
                         status = 400;
                         result = "Bad request. Invalid chat message.";

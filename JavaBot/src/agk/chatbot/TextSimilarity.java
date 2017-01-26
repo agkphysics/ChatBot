@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
+
 import edu.mit.jwi.IRAMDictionary;
 import edu.mit.jwi.RAMDictionary;
 import edu.mit.jwi.data.ILoadPolicy;
@@ -48,7 +50,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
      * The threshold above which sentences with different lengths are
      * automatically assumed dissimilar.
      */
-    private static final int SIZE_DIFFERENCE_THRESHOLD = 10;
+    private static final int SIZE_DIFFERENCE_THRESHOLD = 6;
     /**
      * The minimum similarity between words, to be included in the semantic
      * vector.
@@ -57,7 +59,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
     /**
      * The weighting of the overall similarity between semantic and word-order.
      */
-    private static final double DELTA = 0.75;
+    private static final double DELTA = 0.8;
     
     private static IRAMDictionary dict;
     private static IStemmer stemmer;
@@ -81,6 +83,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
             if (Files.exists(Paths.get("wordnet/dict"))) init(new File("wordnet/dict").toURI().toURL());
             else if (Files.exists(Paths.get("../../wordnet/dict"))) init(new File("../../wordnet/dict").toURI().toURL());
             else if (Files.exists(Paths.get("lib/wn.dict"))) init(new File("lib/wn.dict").toURI().toURL());
+            else if (Files.exists(Paths.get("wn.dict"))) init(new File("wn.dict").toURI().toURL());
             else init(TextSimilarity.class.getClassLoader().getResource("wn.dict"));
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -102,19 +105,19 @@ public class TextSimilarity implements LocalSimilarityFunction {
         if (dict == null) {
             dict = new RAMDictionary(url, ILoadPolicy.IMMEDIATE_LOAD);
             try {
-                dict.open();
+                if (!dict.open()) throw new Exception();
                 dict.load(true);
                 if (!dict.isLoaded()) throw new Exception();
             } catch (Exception e) {
                 System.err.println("Error loading wordnet into memory.");
                 e.printStackTrace();
             }
-            System.out.println("Test similarity between house and apartment: " + similarity("house", "apartment", POS.NOUN));
-            System.out.println("Loaded JWI wordnet library.");
         }
         if (stemmer == null) {
             stemmer = new WordnetStemmer(dict);
         }
+        System.out.println("Test similarity between house and apartment: " + similarity("house", "apartment", POS.NOUN));
+        System.out.println("Loaded JWI wordnet library.");
     }
 
     /**
@@ -157,14 +160,14 @@ public class TextSimilarity implements LocalSimilarityFunction {
         Map<String, Integer> s2WordMap = new HashMap<>();
         
         // If sentences are of very different length, they are very likely to not be similar at all
-        if (Math.abs(sent1Set.size() - sent2Set.size()) > SIZE_DIFFERENCE_THRESHOLD) return 0.0;
+        
         
         Set<Token> jointSet = new HashSet<>();
         Set<String> jointWordSet = new HashSet<>();
         for (int i = 0; i < sent1Set.size(); i++) {
             Token t = sent1Set.get(i);
             // Ignore words not very necessary to convey meaning.
-            if (!t.isStopWord() || !t.getPostag().equals(".")) {
+            if (!t.isStopWord() && !t.getPostag().equals(".")) {
                 if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
                     jointSet.add(t);
                 }
@@ -175,7 +178,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
         }
         for (int i = 0; i < sent2Set.size(); i++) {
             Token t = sent2Set.get(i);
-            if (!t.isStopWord() || !t.getPostag().equals(".")) {
+            if (!t.isStopWord() && !t.getPostag().equals(".")) {
                 if (!jointWordSet.contains(t.getRawContent().toLowerCase())) {
                     jointSet.add(t);
                 }
@@ -184,12 +187,14 @@ public class TextSimilarity implements LocalSimilarityFunction {
                 s2WordMap.put(t.getRawContent().toLowerCase(), i);
             }
         }
+        if (Math.abs(s1WordSet.size() - s2WordSet.size()) > SIZE_DIFFERENCE_THRESHOLD) return 0.0;
         
         double[] s1 = new double[jointSet.size()];
         double[] s2 = new double[jointSet.size()];
         double[] r1 = new double[jointSet.size()];
         double[] r2 = new double[jointSet.size()];
         
+        // TODO: Implement proper noun and named entity similarity.
         Iterator<Token> iter = jointSet.iterator();
         for (int i = 0; i < jointSet.size(); i++) {
             Token t = iter.next();
@@ -201,16 +206,27 @@ public class TextSimilarity implements LocalSimilarityFunction {
             } else if (tPOS == null) {
                 s1[i] = 0.0; // Not comparable by semantics using WordNet
                 r1[i] = 0.0;
-            } else {
+            } else { // t is in s2
                 double maxSim = 0.0;
                 String maxSimWord = "";
                 for (Token word : sent1Set) {
-                    POS wordPOS = pennToWNPOS(word.getPostag());
-                    double sim = 0.0;
-                    if (wordPOS != null && wordPOS.equals(tPOS)) sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS);
-                    if (sim > maxSim) {
-                        maxSim = sim;
+                    if (word.getPostag().startsWith("NNP") && t.getPostag().startsWith("NNP")) {
+                        // Proper nouns compare as equal
+                        maxSim = 1.0;
                         maxSimWord = word.getRawContent().toLowerCase();
+                        break;
+                    } else if (word.getPostag().startsWith("NNP") || t.getPostag().startsWith("NNP")) {
+                        continue;
+                    } else {
+                        POS wordPOS = pennToWNPOS(word.getPostag());
+                        double sim = 0.0;
+                        if (wordPOS != null) {
+                            sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS, tPOS);
+                            if (sim > maxSim) {
+                                maxSim = sim;
+                                maxSimWord = word.getRawContent().toLowerCase();
+                            }
+                        }
                     }
                 }
                 if (maxSim > MIN_SIMILARITY) {
@@ -228,16 +244,26 @@ public class TextSimilarity implements LocalSimilarityFunction {
             } else if (tPOS == null) {
                 s2[i] = 0.0;
                 r2[i] = 0.0;
-            } else {
+            } else { // t is in s1
                 double maxSim = 0.0;
                 String maxSimWord = "";
                 for (Token word : sent2Set) {
-                    POS wordPOS = pennToWNPOS(word.getPostag());
-                    double sim = 0.0;
-                    if (wordPOS != null && wordPOS.equals(tPOS)) sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS);
-                    if (sim > maxSim) {
-                        maxSim = sim;
+                    if (word.getPostag().startsWith("NNP") && t.getPostag().startsWith("NNP")) {
+                        maxSim = 1.0;
                         maxSimWord = word.getRawContent().toLowerCase();
+                        break;
+                    } else if (word.getPostag().startsWith("NNP") || t.getPostag().startsWith("NNP")) {
+                        continue;
+                    } else {
+                        POS wordPOS = pennToWNPOS(word.getPostag());
+                        double sim = 0.0;
+                        if (wordPOS != null) {
+                            sim = similarity(word.getRawContent(), t.getRawContent(), wordPOS, tPOS);
+                            if (sim > maxSim) {
+                                maxSim = sim;
+                                maxSimWord = word.getRawContent().toLowerCase();
+                            }
+                        }
                     }
                 }
                 if (maxSim > MIN_SIMILARITY) {
@@ -285,19 +311,25 @@ public class TextSimilarity implements LocalSimilarityFunction {
     }
 
     /**
-     * This function converts a POS from Penn Treebank format to WordNet POS
-     * format.
+     * This function converts a POS tag from Penn Treebank format to WordNet
+     * POS tag format.
      * 
      * @param pos
-     *            the Penn Treebank POS
-     * @return the {@link POS} object for this POS.
+     *            the Penn Treebank POS tag
+     * @return
+     *         the {@link POS} object for this POS tag, or <code>null</code> if
+     *         no such POS tag exists.
      */
     public static POS pennToWNPOS(String pos) {
         if (pos.startsWith("JJ")) return POS.ADJECTIVE;
-        else if (pos.equals("NN") || pos.equals("NNS")) return POS.NOUN;
+        else if (pos.startsWith("NN")) return POS.NOUN;
         else if (pos.startsWith("RB")) return POS.ADVERB;
         else if (pos.startsWith("VB")) return POS.VERB;
         else return null;
+    }
+    
+    public static double similarity(String w1, String w2, POS pos) {
+        return similarity(w1, w2, pos, pos);
     }
 
     /**
@@ -315,13 +347,19 @@ public class TextSimilarity implements LocalSimilarityFunction {
      *            a non-empty string
      * @param w2
      *            a non-empty string
-     * @param pos
-     *            the words' part of speech tag, a {@link POS} object.
-     * @return the similarity score for the two words, in the range [0, 1]
+     * @param pos1
+     *            the first word's part of speech tag, a {@link POS} object.
+     * @param pos2
+     *            the second word's part of speech tag, a {@link POS} object.
+     * @return 
+     *         the similarity score for the two words, in the range [0, 1]
      */
-    public static double similarity(String w1, String w2, POS pos) {
-        List<String> w1Stems = stemmer.findStems(w1, pos);
-        List<String> w2Stems = stemmer.findStems(w2, pos);
+    public static double similarity(String w1, String w2, POS pos1, POS pos2) {
+        if (w1 == null || w2 == null || pos1 == null || pos2 == null) {
+            throw new IllegalArgumentException("All four arguments must be non-null.");
+        }
+        List<String> w1Stems = stemmer.findStems(w1, pos1);
+        List<String> w2Stems = stemmer.findStems(w2, pos2);
         if (w1Stems.isEmpty() || w2Stems.isEmpty()) {
             // String not found in WN
             return 0.0;
@@ -336,153 +374,168 @@ public class TextSimilarity implements LocalSimilarityFunction {
         
         String w1Stem = w1Stems.get(0);
         String w2Stem = w2Stems.get(0);
-        IIndexWord w1idx = dict.getIndexWord(w1Stem, pos);
-        IIndexWord w2idx = dict.getIndexWord(w2Stem, pos);
+        IIndexWord w1idx = dict.getIndexWord(w1Stem, pos1);
+        IIndexWord w2idx = dict.getIndexWord(w2Stem, pos2);
 
         if (w1idx == null || w2idx == null) return 0.0; // Word not found in WN
         
-        if (pos.equals(POS.NOUN) || pos.equals(POS.VERB)) {
-            int minDist = Integer.MAX_VALUE;
-            ISynsetID minSubsumer = null;
-            
-            /* Iterate through each possible pair of word senses to find the shortest path
-             * via hierarchy. The subsumer that lies on the shortest path is used for
-             * calculating depth.
-             */
-            boolean found = false;
-            for (IWordID w1ID : w1idx.getWordIDs()) {
-                if (found) break;
-                for (IWordID w2ID : w2idx.getWordIDs()) {
-                    ISynsetID subsumer;
-                    int distance = 0;
-
-                    ISynset w1Synset = dict.getSynset(w1ID.getSynsetID());
-                    ISynset w2Synset = dict.getSynset(w2ID.getSynsetID());
-                    
-                    if (!dict.getSynset(w1Synset.getID())
-                            .getRelatedSynsets(Pointer.HYPERNYM_INSTANCE)
-                            .isEmpty()
-                            || !dict.getSynset(w2Synset.getID())
-                            .getRelatedSynsets(Pointer.HYPERNYM_INSTANCE)
-                            .isEmpty()) {
-                        // Ignore specific instances of types of words. Usually proper nouns incorrectly tagged.
-                        return 0.0;
-                    }
-            
-                    if (w2ID.equals(w1ID) || w1Synset.getWords().contains(dict.getWord(w2ID))
-                            || w2Synset.getWords().contains(dict.getWord(w1ID))) {
-                        // Words are in the same synset
-                        subsumer = w1Synset.getID();
-                        distance = 0;
-                    } else {
-                        List<IWord> l = new ArrayList<>(w1Synset.getWords());
-                        l.retainAll(w2Synset.getWords());
+        if (pos1.equals(pos2)) {
+            if (pos1.equals(POS.NOUN) || pos1.equals(POS.VERB)) {
+                int minDist = Integer.MAX_VALUE;
+                ISynsetID minSubsumer = null;
+                
+                /* Iterate through each possible pair of word senses to find the shortest path
+                 * via hierarchy. The subsumer that lies on the shortest path is used for
+                 * calculating depth.
+                 */
+                boolean found = false;
+                for (IWordID w1ID : w1idx.getWordIDs()) {
+                    if (found) break;
+                    for (IWordID w2ID : w2idx.getWordIDs()) {
+                        ISynsetID subsumer;
+                        int distance = 0;
+    
+                        ISynset w1Synset = dict.getSynset(w1ID.getSynsetID());
+                        ISynset w2Synset = dict.getSynset(w2ID.getSynsetID());
                         
-                        Set<ISynsetID> visitedSynsets = new HashSet<>();
-                        visitedSynsets.add(w1Synset.getID());
-                        
-                        List<ISynsetID> hypernyms = dict.getSynset(w1Synset.getID()).getRelatedSynsets(Pointer.HYPERNYM);
-                        while (!hypernyms.isEmpty()) {
-                            ISynsetID hypernym = hypernyms.get(0);
-                            visitedSynsets.add(hypernym);
-                            hypernyms = dict.getSynset(hypernym).getRelatedSynsets(Pointer.HYPERNYM);
+                        if (!dict.getSynset(w1Synset.getID())
+                                .getRelatedSynsets(Pointer.HYPERNYM_INSTANCE)
+                                .isEmpty()
+                                || !dict.getSynset(w2Synset.getID())
+                                .getRelatedSynsets(Pointer.HYPERNYM_INSTANCE)
+                                .isEmpty()) {
+                            // Ignore specific instances of types of words. Usually proper nouns incorrectly tagged.
+                            return 0.0;
                         }
-                        ISynsetID currentSynset = w2Synset.getID();
-                        while (!visitedSynsets.contains(currentSynset)) {
-                            visitedSynsets.add(currentSynset);
-                            distance++;
-                            hypernyms = dict.getSynset(currentSynset).getRelatedSynsets(Pointer.HYPERNYM);
-                            if (pos.equals(POS.VERB) && hypernyms.isEmpty()) return 0.0; // Verbs in different trees, so not related
-                            else currentSynset = hypernyms.get(0);
-                        }
-
-                        // currentSynset is now the subsumer
-                        subsumer = currentSynset;
-
-                        if (!l.isEmpty()) {
-                            // Both words' synsets have words in common.
-                            distance = 1;
+                
+                        if (w2ID.equals(w1ID) || w1Synset.getWords().contains(dict.getWord(w2ID))
+                                || w2Synset.getWords().contains(dict.getWord(w1ID))) {
+                            // Words are in the same synset
+                            subsumer = w1Synset.getID();
+                            distance = 0;
                         } else {
-                            // Different synsets
-                            currentSynset = w1Synset.getID();
-                            while (!currentSynset.equals(subsumer)) {
+                            List<IWord> l = new ArrayList<>(w1Synset.getWords());
+                            l.retainAll(w2Synset.getWords());
+                            
+                            Set<ISynsetID> visitedSynsets = new HashSet<>();
+                            visitedSynsets.add(w1Synset.getID());
+                            
+                            List<ISynsetID> hypernyms = dict.getSynset(w1Synset.getID()).getRelatedSynsets(Pointer.HYPERNYM);
+                            while (!hypernyms.isEmpty()) {
+                                ISynsetID hypernym = hypernyms.get(0);
+                                visitedSynsets.add(hypernym);
+                                hypernyms = dict.getSynset(hypernym).getRelatedSynsets(Pointer.HYPERNYM);
+                            }
+                            ISynsetID currentSynset = w2Synset.getID();
+                            while (!visitedSynsets.contains(currentSynset)) {
+                                visitedSynsets.add(currentSynset);
                                 distance++;
                                 hypernyms = dict.getSynset(currentSynset).getRelatedSynsets(Pointer.HYPERNYM);
-                                currentSynset = hypernyms.get(0);
+                                if (pos1.equals(POS.VERB) && hypernyms.isEmpty()) return 0.0; // Verbs in different trees, so not related
+                                else currentSynset = hypernyms.get(0);
+                            }
+    
+                            // currentSynset is now the subsumer
+                            subsumer = currentSynset;
+    
+                            if (!l.isEmpty()) {
+                                // Both words' synsets have words in common.
+                                distance = 1;
+                            } else {
+                                // Different synsets
+                                currentSynset = w1Synset.getID();
+                                while (!currentSynset.equals(subsumer)) {
+                                    distance++;
+                                    hypernyms = dict.getSynset(currentSynset).getRelatedSynsets(Pointer.HYPERNYM);
+                                    currentSynset = hypernyms.get(0);
+                                }
                             }
                         }
-                    }
-                    
-                    if (distance < minDist) {
-                        minDist = distance;
-                        minSubsumer = subsumer;
-                    }
-                    if (minDist == 0) {
-                        found = true;
-                        break;
+                        
+                        if (distance < minDist) {
+                            minDist = distance;
+                            minSubsumer = subsumer;
+                        }
+                        if (minDist == 0) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
+                
+                if (dict.getSynset(minSubsumer).getRelatedSynsets(Pointer.HYPERNYM).isEmpty()) return 0.0;
+                
+                int depth = 0;
+                List<ISynsetID> hypernyms = dict.getSynset(minSubsumer).getRelatedSynsets(Pointer.HYPERNYM);
+                while (!hypernyms.isEmpty()) {
+                    depth++;
+                    ISynsetID hypernym = hypernyms.get(0);
+                    hypernyms = dict.getSynset(hypernym).getRelatedSynsets(Pointer.HYPERNYM);
+                }
+        
+                double lf = Math.exp(-0.2 * (double)minDist); // exp(-al)
+                double df1 = Math.exp(0.45 * (double)depth); // exp(bh)
+                double df2 = 1.0 / df1; // exp(-bh)
+        
+                return lf * (df1 - df2) / (df1 + df2);
+            } else {
+                // Adjective or adverb
+                int minDist = Integer.MAX_VALUE;
+                
+                /*
+                 * Iterate through all pairs of words and determine minimum distance
+                 * amongst adjectives, if they are somewhat related.
+                 * 
+                 * TODO: Implement using noun hierarchy via derived form?
+                 */
+                for (IWordID w1ID : w1idx.getWordIDs()) {
+                    for (IWordID w2ID : w2idx.getWordIDs()) {
+                        ISynset w1Synset = dict.getSynset(w1ID.getSynsetID());
+                        ISynset w2Synset = dict.getSynset(w2ID.getSynsetID());
+                        int distance = 0;
+                        
+                        if (w2ID.equals(w1ID) || w1Synset.getWords().contains(dict.getWord(w2ID))
+                                || w2Synset.getWords().contains(dict.getWord(w1ID))) {
+                            // Words are in the same synset
+                            distance = 0;
+                        } else {
+                            List<IWord> l = new ArrayList<>(w1Synset.getWords());
+                            l.retainAll(w2Synset.getWords());
+                            
+                            if (!l.isEmpty()) {
+                                // Both words' synsets have words in common.
+                                distance = 1;
+                            } else {
+                                Set<ISynsetID> synonyms = new HashSet<>();
+                                synonyms.addAll(w1Synset.getRelatedSynsets(Pointer.SIMILAR_TO));
+                                synonyms.retainAll(w2Synset.getRelatedSynsets(Pointer.SIMILAR_TO));
+                                if (!synonyms.isEmpty()) {
+                                    // Words are synonyms in different synsets
+                                    distance = 2;
+                                }
+                            }
+                        }
+                        
+                        if (distance < minDist) minDist = distance;
+                        if (minDist == 0) return 1.0;
+                    }
+                }
+                
+                return Math.exp(-0.3 * (double)minDist);
             }
-            
-            if (dict.getSynset(minSubsumer).getRelatedSynsets(Pointer.HYPERNYM).isEmpty()) return 0.0;
-            
-            int depth = 0;
-            List<ISynsetID> hypernyms = dict.getSynset(minSubsumer).getRelatedSynsets(Pointer.HYPERNYM);
-            while (!hypernyms.isEmpty()) {
-                depth++;
-                ISynsetID hypernym = hypernyms.get(0);
-                hypernyms = dict.getSynset(hypernym).getRelatedSynsets(Pointer.HYPERNYM);
-            }
-    
-            double lf = Math.exp(-0.2 * (double)minDist); // exp(-al)
-            double df1 = Math.exp(0.45 * (double)depth); // exp(bh)
-            double df2 = 1.0 / df1; // exp(-bh)
-    
-            return lf * (df1 - df2) / (df1 + df2);
         } else {
-            // Adjective or adverb
-            int minDist = Integer.MAX_VALUE;
-            
-            /*
-             * Iterate through all pairs of words and determine minimum distance
-             * amongst adjectives, if they are somewhat related.
-             * 
-             * TODO: Implement using noun hierarchy via derived form?
-             */
+            if (true) return 0.0;
             for (IWordID w1ID : w1idx.getWordIDs()) {
                 for (IWordID w2ID : w2idx.getWordIDs()) {
                     ISynset w1Synset = dict.getSynset(w1ID.getSynsetID());
                     ISynset w2Synset = dict.getSynset(w2ID.getSynsetID());
                     int distance = 0;
                     
-                    if (w2ID.equals(w1ID) || w1Synset.getWords().contains(dict.getWord(w2ID))
-                            || w2Synset.getWords().contains(dict.getWord(w1ID))) {
-                        // Words are in the same synset
-                        distance = 0;
-                    } else {
-                        List<IWord> l = new ArrayList<>(w1Synset.getWords());
-                        l.retainAll(w2Synset.getWords());
-                        
-                        if (!l.isEmpty()) {
-                            // Both words' synsets have words in common.
-                            distance = 1;
-                        } else {
-                            Set<ISynsetID> synonyms = new HashSet<>();
-                            synonyms.addAll(w1Synset.getRelatedSynsets(Pointer.SIMILAR_TO));
-                            synonyms.retainAll(w2Synset.getRelatedSynsets(Pointer.SIMILAR_TO));
-                            if (!synonyms.isEmpty()) {
-                                // Words are synonyms in different synsets
-                                distance = 2;
-                            }
-                        }
-                    }
-                    
-                    if (distance < minDist) minDist = distance;
-                    if (minDist == 0) return 1.0;
+                    w1Synset.getRelatedSynsets(Pointer.DERIVATIONALLY_RELATED);
                 }
             }
             
-            return Math.exp(-0.3 * (double)minDist);
+            return 0.0;
         }
     }
 }

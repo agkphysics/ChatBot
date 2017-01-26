@@ -62,16 +62,21 @@ public class MainServlet extends HttpServlet {
     @Override
 	public void init(ServletConfig config) throws ServletException {
 	    if (bot == null) {
-    	    try {
-                bot = new ChatBot(Paths.get(config.getServletContext().getResource("/WEB-INF/xmlconv").toURI()));
-                bot.configure();
-                bot.preCycle();
-                initialised = true;
-            } catch (MalformedURLException | URISyntaxException | FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+	        new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        bot = new ChatBot(Paths.get(config.getServletContext().getResource("/WEB-INF/xmlconv").toURI()));
+                        bot.configure();
+                        bot.preCycle();
+                        initialised = true;
+                    } catch (MalformedURLException | URISyntaxException | FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
 	    }
 	}
 
@@ -105,27 +110,32 @@ public class MainServlet extends HttpServlet {
         JSONObject json = new JSONObject();
         response.addHeader("Content-Type", "application/json");
 	    
-	    if (request.getHeader("Content-Type").equals("application/x-www-form-urlencoded")) {
-	        String chat = request.getParameter("c");
-    	    if (chat.length() == 0 || chat.length() > 140) {
-    	        status = 400;
-    	        result = "Bad request. Invalid chat message.";
-    	    } else {
-        	    try {
-        	        CBRQuery query = bot.strToQuery(chat);
-        	        bot.cycle(query);
-        	        ChatResponse resp = bot.getLastResponse();
-        	        status = 200;
-        	        result = resp.getText().toString();
-        	    } catch (ExecutionException e) {
-        	        status = 500;
-        	        result = "An error occurred.";
-        	        e.printStackTrace();
+        if (initialised) {
+    	    if (request.getHeader("Content-Type").startsWith("application/x-www-form-urlencoded")) {
+    	        String chat = request.getParameter("c");
+        	    if (chat.length() == 0 || chat.length() > 140) {
+        	        status = 400;
+        	        result = "Bad request. Invalid chat message.";
+        	    } else {
+            	    try {
+            	        CBRQuery query = bot.strToQuery(chat);
+            	        bot.cycle(query);
+            	        ChatResponse resp = bot.getLastResponse();
+            	        status = 200;
+            	        result = resp.getText().toString();
+            	    } catch (ExecutionException e) {
+            	        status = 500;
+            	        result = "An error occurred.";
+            	        e.printStackTrace();
+            	    }
         	    }
-    	    }
-	    } else {
-            status = 400;
-            result = "Bad request. Requires Content-Type: application/x-www-form-urlencoded";
+    	    } else {
+                status = 400;
+                result = "Bad request. Requires Content-Type: application/x-www-form-urlencoded";
+            }
+        } else {
+            status = 503;
+            result = "Bot is still initialising.";
         }
 	    
 	    try {

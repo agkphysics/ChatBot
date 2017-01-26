@@ -30,16 +30,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * This class represents the main chat bot application.
  * 
  * @author Aaron Keesing
- * @version 2.0
+ * @version 2.1
  */
 public class ChatBot implements StandardCBRApplication {
     
-    public static final String VERSION_STRING = "2.0";
+    public static final String VERSION_STRING = "2.1";
 
     /**
      * A limit on the difference between the most similar retrieved case and
@@ -50,7 +51,7 @@ public class ChatBot implements StandardCBRApplication {
     /**
      * The minimum similarity required for retrieved cases.
      * If the maximum retrieved similarity is less than this value, one of the
-     * filler responses in {@link ConfusedResponses} is output.
+     * filler responses in {@link DefaultResponses} is output.
      */
     private static final double MIN_SIMILARITY = 0.5;
     
@@ -94,9 +95,10 @@ public class ChatBot implements StandardCBRApplication {
             String line;
             
             System.out.print("> ");
-            while (!(line = sc.nextLine()).equals("") && !bot.finished) {
+            while (!(line = sc.nextLine()).equals("")) {
                 CBRQuery query = bot.strToQuery(line);
                 bot.cycle(query);
+                if (bot.finished) break;
                 System.out.print("> ");
             }
             
@@ -181,7 +183,12 @@ public class ChatBot implements StandardCBRApplication {
             e1.printStackTrace();
             throw new ExecutionException(e1);
         }
+        System.out.println("Memory usage: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " MB "
+                + "out of " + Runtime.getRuntime().totalMemory() / 1048576);
+
         NLPText.initPipeline();
+        System.out.println("Memory usage: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " MB "
+                + "out of " + Runtime.getRuntime().totalMemory() / 1048576);
 
         _connector = new ProcessedXMLConnector(corpusPath);
         _caseBase = new InMemoryCaseBase();
@@ -196,7 +203,7 @@ public class ChatBot implements StandardCBRApplication {
      * CBRQuery)
      */
     @Override
-    public void cycle(CBRQuery query) throws ExecutionException {        
+    public void cycle(CBRQuery query) throws ExecutionException {     
         NNConfig simConfig = new NNConfig();
         simConfig.setDescriptionSimFunction(new Average());
         Attribute textAttribute = new Attribute("text", ChatResponse.class);
@@ -217,7 +224,11 @@ public class ChatBot implements StandardCBRApplication {
         ChatResponse response;
         if (topEval < MIN_SIMILARITY) {
             response = new ChatResponse();
-            response.setText(ConfusedResponses.STATEMENT_ONE);
+            if (response.getText().getAllTokens().stream().anyMatch(x -> x.getRawContent().equals("?"))) {
+                response.setText(DefaultResponses.getQuestionResponse());
+            } else {
+                response.setText(DefaultResponses.getStatementResponse());
+            }
             storeCurrentThread();
             currentThread.clear();
         } else {
@@ -229,18 +240,27 @@ public class ChatBot implements StandardCBRApplication {
             
             System.out.println(String.format("Found %d cases:", topRes.size()));
             for (RetrievalResult r : topRes) System.out.println(r.get_case().toString() + " " + r.getEval());
-            response = (ChatResponse)topRes.iterator().next().get_case().getSolution();
+            Iterator<RetrievalResult> iter = topRes.iterator();
+            response = (ChatResponse)iter.next().get_case().getSolution();
+            try {
+                while (response == null) response = (ChatResponse)iter.next().get_case().getSolution();
+            } catch (NoSuchElementException e) {}
+        }
+        
+        for (Token t : ((ChatResponse)query.getDescription()).getText().getAllTokens()) {
+            String word = t.getRawContent().toLowerCase();
+            if (word.contains("bye")) {
+                finished = true;
+                response = new ChatResponse();
+                response.setText(DefaultResponses.getFarewell());
+                return;
+            }
         }
         currentThread.add((ChatResponse)query.getDescription());
         currentThread.add(response);
         System.out.println(response.toString());
         
-        for (Token t : ((ChatResponse)query.getDescription()).getText().getAllTokens()) {
-            String word = t.getRawContent().toLowerCase();
-            if (word.contains("bye") || word.contains("goodbye")) {
-                finished = true;
-            }
-        }
+        
         System.out.println();
     }
     
@@ -274,7 +294,12 @@ public class ChatBot implements StandardCBRApplication {
         long t0 = System.currentTimeMillis();
         _caseBase.init(_connector);
         long t1 = System.currentTimeMillis();
-        System.out.println(String.format("Generated %d English response pairs in %.2f seconds.", _caseBase.getCases().size(), (t1 - t0) / 1000.0));
+        if (_caseBase.getCases().size() == 0) {
+            throw new ExecutionException("No cases were generated.");
+        }
+        System.out.println(String.format("Generated %d English cases in %.2f seconds.", _caseBase.getCases().size(), (t1 - t0) / 1000.0));
+        System.out.println("Memory usage: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " MB "
+                + "out of " + Runtime.getRuntime().totalMemory() / 1048576);
         System.out.println();
         
         return _caseBase;

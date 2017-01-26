@@ -47,7 +47,8 @@ public class NLPText extends IEText {
     }
 
     /**
-     * Creates a new {@link NLPText} object with the given string.
+     * Creates a new {@link NLPText} object with the given string as content.
+     * Does not do any processing on the content.
      * 
      * @param content the plain string representation of the text.
      */
@@ -121,8 +122,8 @@ public class NLPText extends IEText {
     }
     
     private final static List<String> STOPWORDS = Arrays.asList(
-        "a", "the", "an", "who", "what", "when", "where", "how", "this",
-        "that", "it", "so", "no", "not", "but", "and", "okay"
+        "a", "the", "an", "this", "that", "it", "so", "no", "not", "but",
+        "and", "okay"
     );
     
     /**
