@@ -6,3 +6,6 @@ build/
 .vscode/
 .settings/
 xmlconv/
+typings/
+*.json
+gate-EN-twitter.model

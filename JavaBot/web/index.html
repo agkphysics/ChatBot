@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
+    <title>CBR Chat Bot</title>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection">
+    <link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection">
+</head>
+
+<body>
+    <main>
+        <div id="index-banner">
+            <h1 class="header center blue-text hide-on-small-only">CBR Chat Bot</h1>
+            <h2 class="header center blue-text hide-on-med-and-up">CBR Chat Bot</h2>
+            <h5 class="header center light">A web based chat bot.</h5>
+            <br>
+        </div>
+
+        <div class="center" id="spinner">
+            <div class="preloader-wrapper big active">
+                <div class="spinner-layer spinner-blue-only">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div>
+                    <div class="gap-patch">
+                        <div class="circle"></div>
+                    </div>
+                    <div class="circle-clipper right">
+                        <div class="circle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="center chatdiv grey lighten-5 hide" id="chatdiv">
+            <form id="chatform">
+                <div id="messagesList" class="messages">
+                    <div class="message z-depth-1 hide" id="msgtemplate">
+                        This is the template message.
+                    </div>
+                </div>
+                <div class="input-field message-input">
+                    <input id="messageInput" disabled placeholder="Enter a message" type="text"/>
+                    <a href="#"><i class="material-icons" id="sendicon">send</i></a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="page-footer blue main-footer">
+        <div class="footer-copyright">
+            <div class="row container">
+                <div class="col m9 s6">
+                    <span class="hide-on-small-only">Made using </span>
+                    <a class="blue-text text-lighten-3" href="http://materializecss.com">MaterializeCSS</a>
+                </div>
+                <div class="col m3 s6">
+                    <a class="white-text" href="https://github.com/agkphysics/ChatBot">
+                        <span class="hide-on-small-only">Source on</span>
+                        <img class="github-logo" alt="GitHub" src="images/GitHub_Logo.png">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="js/materialize.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
