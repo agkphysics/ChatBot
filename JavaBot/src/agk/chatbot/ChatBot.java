@@ -30,7 +30,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-import java.util.function.Predicate;
 
 /**
  * This class represents the main chat bot application.
@@ -101,17 +100,12 @@ public class ChatBot implements StandardCBRApplication {
                 if (bot.finished) break;
                 System.out.print("> ");
             }
+            sc.close();
             
             bot.postCycle();
-            sc.close();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        
-        System.out.println();
-        System.out.println("Finished bot application");
-        System.out.println("------------------------------------------------");
-        System.out.println();
     }
     
     /**
@@ -165,9 +159,14 @@ public class ChatBot implements StandardCBRApplication {
         else if (Files.exists(Paths.get("lib/xmlconv"))) corpusPath = Paths.get("lib/xmlconv");
         else throw new FileNotFoundException("No valid corpus path given or found.");
         
+        System.out.println("CBR Chat Bot  Copyright (C) 2016, 2017  Aaron Keesing");
+        System.out.println("This program comes with ABSOLUTELY NO WARRANTY.");
+        System.out.println("This is free software, and you are welcome to redistribute it");
+        System.out.println("under certain conditions; see the file LICENSE.txt for details.");
         System.out.println();
-        System.out.println("Started bot application -- Chat Bot version " + VERSION_STRING);
-        System.out.println("-----------------------------------------------");
+        
+        System.out.println("Started bot application -- CBR Chat Bot version " + VERSION_STRING);
+        System.out.println("--------------------------------------------------");
         System.out.println();
     }
 
@@ -283,6 +282,11 @@ public class ChatBot implements StandardCBRApplication {
         
         _caseBase.close();
         _connector.close();
+        
+        System.out.println();
+        System.out.println("Finished bot application");
+        System.out.println("---------------------------------------------------");
+        System.out.println();
     }
 
     /**
