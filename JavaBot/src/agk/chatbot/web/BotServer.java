@@ -1,19 +1,20 @@
-/* Copyright (C) 2016, 2017 Aaron Keesing
+/*
+ * Copyright (C) 2016, 2017 Aaron Keesing
  * 
  * This file is part of CBR Chat Bot.
  * 
- * CBR Chat Bot is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * CBR Chat Bot is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  * 
- * CBR Chat Bot is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * CBR Chat Bot is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  * 
- * You should have received a copy of the GNU General Public License
- * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * CBR Chat Bot. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package agk.chatbot.web;
@@ -29,7 +30,7 @@ import org.json.JSONObject;
 import com.sun.net.httpserver.*;
 
 import agk.chatbot.ChatBot;
-import agk.chatbot.ChatResponse;
+import agk.chatbot.cbr.ChatResponse;
 import jcolibri.cbrcore.CBRQuery;
 import jcolibri.exception.ExecutionException;
 
@@ -37,18 +38,18 @@ import jcolibri.exception.ExecutionException;
  * This class implements an extremely simple web server interface to the bot.
  * 
  * @author Aaron
- * @version 2.0
+ * @version 2.3
  */
 public class BotServer implements HttpHandler {
-    
+
     /**
      * The port that the server runs on.
      */
     public static final int PORT = 8000;
-    
+
     static ChatBot bot;
     static volatile boolean initialised = false;
-    
+
     /**
      * Initialises a defauilt BotServer object.
      */
@@ -59,7 +60,7 @@ public class BotServer implements HttpHandler {
             @Override
             public void run() {
                 try {
-                    bot = new ChatBot(null);
+                    bot = new ChatBot();
                     bot.configure();
                     bot.preCycle();
                     initialised = true;
@@ -70,7 +71,7 @@ public class BotServer implements HttpHandler {
                 }
             }
         }).start();
-        
+
         HttpServer server;
         try {
             server = HttpServer.create(new InetSocketAddress(PORT), 0);
@@ -110,7 +111,7 @@ public class BotServer implements HttpHandler {
                 org.apache.commons.io.IOUtils.copy(t.getRequestBody(), strWriter, Charset.forName("UTF-8"));
                 Map<String, String> map = queryToMap(strWriter.toString());
                 String chat = map.get("c");
-                
+
                 if (requestHeaders.getFirst("Content-Type").startsWith("application/x-www-form-urlencoded")) {
                     if (chat.length() == 0 || chat.length() > 140) {
                         status = 400;
@@ -140,28 +141,27 @@ public class BotServer implements HttpHandler {
             status = 501;
             result = "Method not implemented.";
         }
-        
+
         try {
             json.put("status", status);
             json.put("result", result);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        
+
         String response = json.toString();
         t.sendResponseHeaders(status, response.length());
         os.write(response.getBytes());
         os.close();
     }
-    
+
     /**
      * Converts a URL-encoded query into a {@link Map} object of key-value
      * pairs.
      * 
      * @param query
-     *              the GET or POST query to map to (key, value) pairs
-     * @return
-     *         a {@link Map} of <code><String, String></code> pairs that
+     *            the GET or POST query to map to (key, value) pairs
+     * @return a {@link Map} of <code><String, String></code> pairs that
      *         contains the decoded items in the query.
      */
     public Map<String, String> queryToMap(String query) {

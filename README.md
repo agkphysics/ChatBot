@@ -2,9 +2,9 @@
 
 **An interactive chat bot using case based reasoning.**
 
-This chat bot uses CBR techniques to have a conversation with a user.
-It is a summer project I have been working on while studying at the University
-of Auckland.
+This web chat bot uses CBR techniques to have an English conversation with a
+user. It is a summer project I worked on while studying at the University of
+Auckland, over the 2016-2017 holidays.
 
 
 ## Installation
@@ -12,8 +12,12 @@ of Auckland.
 See the respective README.txt file in JavaBot/lib for instructions on how to
 install the required java dependencies.
 
-The bot also requires a copy of WordNet to be installed. This can be downloaded
-from <https://wordnet.princeton.edu/wordnet/download/>.
+The bot requires a copy of WordNet and an XML corpus.
+WordNet can be installed either in a directory or in a compressed file. This can
+be downloaded from
+<https://wordnet.princeton.edu/wordnet/download/>.
+The XML corpus must consist of XML files processed using `processXML.py` below
+and should reside in the `xmlconv/` directory.
 
 ### Python Script
 For processing the XML files using the python script you can use either
@@ -29,9 +33,10 @@ to start the CoreNLP server instance.
 The python packages `xmltodict`, `pycorenlp` and `nltk` are also required and can be
 installed with `pip install xmltodict pycorenlp nltk`.
 
-The script is able to process [TalkBank](http://talkbank.org/ "TalkBank") XML
-files, as well as [OANC](http://www.anc.org/data/oanc/contents/) files from the
-[American National Corpus](http://www.anc.org/ "ANC"), which have been converted
+The script is able to process the Microsoft Research Twitter corpus,
+[TalkBank](http://talkbank.org/ "TalkBank") XML files, and
+[OANC](http://www.anc.org/data/oanc/contents/) files from the
+[American National Corpus](http://www.anc.org/ "ANC") that have been converted
 to [inline XML](http://www.anc.org/software/anc-tool/ "ANC Conversion Tool").
 
 * `python processXML.py process -p [-s] (-t|-a|-w) /path/to/file` prints details
@@ -49,17 +54,20 @@ In order to correctly build you may need to edit some of the properties in this
 file such as `wn.dir`, `xml.dir` and `web.deploy.dir`.
 
 ## Running
-To run the bot you must supply the directory that contains the processed XML
+To run the bot you can supply the directory that contains the processed XML
 files as a command line argument, otherwise the bot will look for the
-directories in the current director as well as the `lib/` directory.
+dependencies in the current directory as well as the `lib/` directory.
 
-The bot is console based as well as web based. It output to console info about the
-cases it retrieves and modifies.
+The bot is console based as well as web based. It outputs to console info about
+the cases it retrieves and modifies in both console and web mode.
 
-To execute a simple standalone web server which takes requests and responds in
-JSON format, execute the main class `agk.chatbot.BotServer`, e.g.
-`java -cp ".;lib\*" agk.chatbot.BotServer`
+To run the console only bot, execute the java class `agk.chatbot.ChatBot`, e.g.
+`java -cp ".;lib\*" agk.chatbot.ChatBot`
+
+To run a simple standalone web server which takes requests and responds in
+JSON format, execute the java class `agk.chatbot.web.BotServer`, e.g.
+`java -cp ".;lib\*" agk.chatbot.web.BotServer`
 
 The webapp can also be placed in the `webapps/` directory of a Tomcat server
 instance. To build the webapp execute `ant web` from within the `JavaBot/`
-directory.
+directory. To deploy the webapp and dependencies execute `ant deploy.web`.

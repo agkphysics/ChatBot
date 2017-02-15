@@ -1,22 +1,23 @@
-/* Copyright (C) 2016, 2017 Aaron Keesing
+/*
+ * Copyright (C) 2016, 2017 Aaron Keesing
  * 
  * This file is part of CBR Chat Bot.
  * 
- * CBR Chat Bot is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * CBR Chat Bot is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  * 
- * CBR Chat Bot is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * CBR Chat Bot is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  * 
- * You should have received a copy of the GNU General Public License
- * along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * CBR Chat Bot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package agk.chatbot;
+package agk.chatbot.cbr;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +31,7 @@ import jcolibri.cbrcore.*;
  * @author Aaron
  */
 public class InMemoryCaseBase implements CBRCaseBase {
-    
+
     protected Collection<CBRCase> cases;
     protected Connector connector;
 
@@ -41,8 +42,10 @@ public class InMemoryCaseBase implements CBRCaseBase {
         super();
         cases = new ArrayList<>();
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see jcolibri.casebase.LinealCaseBase#init(jcolibri.cbrcore.Connector)
      */
     @Override
@@ -51,23 +54,29 @@ public class InMemoryCaseBase implements CBRCaseBase {
         cases = connector.retrieveAllCases();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see jcolibri.casebase.LinealCaseBase#forgetCases(java.util.Collection)
      */
     @Override
     public void forgetCases(Collection<CBRCase> cases) {
         cases.removeAll(cases);
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see jcolibri.casebase.LinealCaseBase#getCases()
      */
     @Override
     public Collection<CBRCase> getCases() {
         return cases;
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see jcolibri.casebase.LinealCaseBase#learnCases(java.util.Collection)
      */
     @Override
@@ -75,8 +84,10 @@ public class InMemoryCaseBase implements CBRCaseBase {
         connector.storeCases(cases);
         cases.addAll(cases);
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see jcolibri.casebase.LinealCaseBase#close()
      */
     @Override
@@ -85,8 +96,11 @@ public class InMemoryCaseBase implements CBRCaseBase {
         connector.close();
     }
 
-    /* (non-Javadoc)
-     * @see jcolibri.cbrcore.CBRCaseBase#getCases(jcolibri.cbrcore.CaseBaseFilter)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * jcolibri.cbrcore.CBRCaseBase#getCases(jcolibri.cbrcore.CaseBaseFilter)
      */
     @Override
     public Collection<CBRCase> getCases(CaseBaseFilter filter) {

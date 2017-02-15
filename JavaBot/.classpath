@@ -1,152 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/abstractparser.jar"/>
-	<classpathentry kind="lib" path="lib/aduna-clustermap-2006.1-resources.jar"/>
-	<classpathentry kind="lib" path="lib/aduna-clustermap-2006.1.jar"/>
-	<classpathentry kind="lib" path="lib/antlr-2.7.6.jar"/>
-	<classpathentry kind="lib" path="lib/api.jar"/>
-	<classpathentry kind="lib" path="lib/arq.jar"/>
-	<classpathentry kind="lib" path="lib/asm-attrs.jar"/>
-	<classpathentry kind="lib" path="lib/asm.jar"/>
-	<classpathentry kind="lib" path="lib/aterm-java-1.6.jar"/>
-	<classpathentry kind="lib" path="lib/axis.jar"/>
-	<classpathentry kind="lib" path="lib/bsh-2.0b4.jar"/>
-	<classpathentry kind="lib" path="lib/c3p0-0.9.0.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-case-normalizer.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-fuzzyants.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-haog.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-lingo.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-stc.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-filter-trc.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-input-lucene.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-input-msnapi.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-input-yahooapi.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-local-core.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-snowball-stemmers.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-stemmer-stempelator.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-util-common.jar"/>
-	<classpathentry kind="lib" path="lib/carrot2-util-tokenizer.jar"/>
-	<classpathentry kind="lib" path="lib/cglib-2.1.3.jar"/>
-	<classpathentry kind="lib" path="lib/Chart2D.jar"/>
-	<classpathentry kind="lib" path="lib/colt-1.0.3-trimmed.jar"/>
-	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/commons-collections-3.2.jar"/>
-	<classpathentry kind="lib" path="lib/commons-discovery-0.2.jar"/>
-	<classpathentry kind="lib" path="lib/commons-httpclient-3.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/commons-lang-2.1.jar"/>
-	<classpathentry kind="lib" path="lib/commons-logging-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/commons-pool-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/concurrent.jar"/>
-	<classpathentry kind="lib" path="lib/db-4.3.29.jar"/>
-	<classpathentry kind="lib" path="lib/dom4j-1.6.1.jar"/>
-	<classpathentry kind="lib" path="lib/easymock-1.2_Java1.5.jar"/>
-	<classpathentry kind="lib" path="lib/format.jar"/>
-	<classpathentry kind="lib" path="lib/forms-1.0.7.jar"/>
-	<classpathentry kind="lib" path="lib/gate.jar"/>
-	<classpathentry kind="lib" path="lib/grok-0.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/hessian-3.0.20.jar"/>
-	<classpathentry kind="lib" path="lib/hibernate3.jar"/>
-	<classpathentry kind="lib" path="lib/hivemind-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/hivemind-jmx-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/hivemind-lib-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/hsqldb.jar"/>
-	<classpathentry kind="lib" path="lib/icu4j_3_4.jar"/>
-	<classpathentry kind="lib" path="lib/impl.jar"/>
-	<classpathentry kind="lib" path="lib/inference.jar"/>
-	<classpathentry kind="lib" path="lib/InfoVisual-CB.jar"/>
-	<classpathentry kind="lib" path="lib/io.jar"/>
-	<classpathentry kind="lib" path="lib/iri.jar"/>
-	<classpathentry kind="lib" path="lib/jal.jar"/>
-	<classpathentry kind="lib" path="lib/Jama-1.0.2.jar"/>
-	<classpathentry kind="lib" path="lib/jasper-compiler-jdt.jar"/>
 	<classpathentry kind="lib" path="lib/java-string-similarity-0.19.jar"/>
-	<classpathentry kind="lib" path="lib/javassist-3.0.jar"/>
-	<classpathentry kind="lib" path="lib/jaxen-1.1-beta-6.jar"/>
-	<classpathentry kind="lib" path="lib/jaxrpc.jar"/>
-	<classpathentry kind="lib" path="lib/jcolibri2.jar" sourcepath="lib/jcolibri2-src.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/jcolibri2-doc.zip!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/jdic.jar"/>
-	<classpathentry kind="lib" path="lib/jdom.jar"/>
-	<classpathentry kind="lib" path="lib/je.jar"/>
-	<classpathentry kind="lib" path="lib/jena.jar"/>
-	<classpathentry kind="lib" path="lib/jetty.jar"/>
-	<classpathentry kind="lib" path="lib/json.jar"/>
-	<classpathentry kind="lib" path="lib/jta.jar"/>
-	<classpathentry kind="lib" path="lib/junit.jar"/>
-	<classpathentry kind="lib" path="lib/jwnl.jar"/>
-	<classpathentry kind="lib" path="lib/looks-2.0.4.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-analyzers-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-ant-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-benchmark-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-core-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-highlighter-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-lucli-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-memory-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-misc-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-queries-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-regex-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-similarity-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-spellchecker-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-surround-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-swing-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-wordnet-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-xml-query-parser-2.1.0.jar"/>
-	<classpathentry kind="lib" path="lib/maxent.jar"/>
-	<classpathentry kind="lib" path="lib/mysql-connector-java-3.0.11-stable-bin.jar"/>
-	<classpathentry kind="lib" path="lib/ontobridge.jar"/>
-	<classpathentry kind="lib" path="lib/opennlp.jar"/>
-	<classpathentry kind="lib" path="lib/oro-2.0.6.jar"/>
-	<classpathentry kind="lib" path="lib/owl-servlet.jar"/>
-	<classpathentry kind="lib" path="lib/pellet.jar"/>
-	<classpathentry kind="lib" path="lib/rdfapi.jar"/>
-	<classpathentry kind="lib" path="lib/rdfparser.jar"/>
-	<classpathentry kind="lib" path="lib/relaxngDatatype.jar"/>
-	<classpathentry kind="lib" path="lib/rules.jar"/>
-	<classpathentry kind="lib" path="lib/saaj.jar"/>
-	<classpathentry kind="lib" path="lib/servlet.jar"/>
-	<classpathentry kind="lib" path="lib/SnowBall.jar"/>
-	<classpathentry kind="lib" path="lib/spamcorpus.jar"/>
-	<classpathentry kind="lib" path="lib/stax-1.1.2-dev.jar"/>
-	<classpathentry kind="lib" path="lib/stax-api-1.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/stempel-1.0-dw.jar"/>
-	<classpathentry kind="lib" path="lib/stempelator-1.0.jar"/>
-	<classpathentry kind="lib" path="lib/trove.jar"/>
-	<classpathentry kind="lib" path="lib/validation.jar"/>
-	<classpathentry kind="lib" path="lib/violinstrings-1.0.2.jar"/>
-	<classpathentry kind="lib" path="lib/wordnetbridge.jar"/>
-	<classpathentry kind="lib" path="lib/wsdl4j-1.5.1.jar"/>
-	<classpathentry kind="lib" path="lib/wstx-asl-2.8.jar"/>
-	<classpathentry kind="lib" path="lib/xercesImpl.jar"/>
-	<classpathentry kind="lib" path="lib/xsdlib.jar"/>
 	<classpathentry kind="lib" path="lib/edu.mit.jwi_2.4.0.jar" sourcepath="lib/edu.mit.jwi_2.4.0_src.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/edu.mit.jwi_2.4.0_javadoc.zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/joda-time.jar"/>
-	<classpathentry kind="lib" path="lib/jollyday.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-1.2.14.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-simple.jar"/>
-	<classpathentry kind="lib" path="lib/xom.jar"/>
-	<classpathentry kind="lib" path="lib/javax.json.jar"/>
-	<classpathentry kind="lib" path="lib/ejml-0.23.jar"/>
-	<classpathentry kind="lib" path="lib/protobuf.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-2.5.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/commons-io-2.5-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0-models.jar"/>
-	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0.jar" sourcepath="lib/stanford-corenlp-3.7.0-sources.jar">
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/ejml-0.23.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/javax.json.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/joda-time.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/jollyday.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/protobuf.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/slf4j-api.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/slf4j-simple.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0-models.jar"/>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0.jar" sourcepath="lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0-sources.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/stanford-corenlp-3.7.0-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/stanford-corenlp-3.7.0/xom.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/abstractparser.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/aduna-clustermap-2006.1-resources.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/aduna-clustermap-2006.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/antlr-2.7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/api.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/arq.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/asm-attrs.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/asm.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/aterm-java-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/axis.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/bsh-2.0b4.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/c3p0-0.9.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-case-normalizer.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-fuzzyants.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-haog.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-lingo.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-stc.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-filter-trc.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-input-lucene.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-input-msnapi.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-input-yahooapi.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-local-core.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-snowball-stemmers.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-stemmer-stempelator.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-util-common.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/carrot2-util-tokenizer.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/cglib-2.1.3.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/Chart2D.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/colt-1.0.3-trimmed.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-codec-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-collections-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-discovery-0.2.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-lang-2.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/commons-pool-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/concurrent.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/db-4.3.29.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/easymock-1.2_Java1.5.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/format.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/forms-1.0.7.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/gate.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/grok-0.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hessian-3.0.20.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hibernate3.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hivemind-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hivemind-jmx-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hivemind-lib-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/hsqldb.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/icu4j_3_4.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/impl.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/inference.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/InfoVisual-CB.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/io.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/iri.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jal.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jasper-compiler-jdt.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/javassist-3.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jaxen-1.1-beta-6.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jaxrpc.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jcolibri2.jar" sourcepath="lib/jcolibri2/jcolibri2-src.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/JavaBot/lib/jcolibri2/jcolibri2-doc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jcolibri2/jdic.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jdom.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/je.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jena.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jetty.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/json.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jta.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/junit.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/jwnl.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/log4j-1.2.14.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/looks-2.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-analyzers-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-ant-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-benchmark-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-core-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-highlighter-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-lucli-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-memory-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-misc-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-queries-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-regex-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-similarity-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-snowball-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-spellchecker-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-surround-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-swing-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-wordnet-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/lucene-xml-query-parser-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/maxent.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/mysql-connector-java-3.0.11-stable-bin.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/ontobridge.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/opennlp.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/oro-2.0.6.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/owl-servlet.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/pellet.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/rdfapi.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/rdfparser.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/relaxngDatatype.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/rules.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/saaj.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/servlet.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/SnowBall.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/spamcorpus.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/stax-1.1.2-dev.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/stax-api-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/stempel-1.0-dw.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/stempelator-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/trove.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/validation.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/violinstrings-1.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/wordnetbridge.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/wsdl4j-1.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/wstx-asl-2.8.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="lib/jcolibri2/xsdlib.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v8.5">
 		<attributes>
@@ -155,5 +156,41 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/aopalliance-repackaged-2.5.0-b30.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/grizzly-framework-2.3.28.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/grizzly-http-2.3.28.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/grizzly-http-server-2.3.28.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/hk2-api-2.5.0-b30.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/hk2-locator-2.5.0-b30.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/hk2-utils-2.5.0-b30.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/hppc-0.7.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-annotations-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-core-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-databind-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-jaxrs-base-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-jaxrs-json-provider-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jackson-module-jaxb-annotations-2.8.4.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/javassist-3.20.0-GA.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/javax.annotation-api-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/javax.inject-2.5.0-b30.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/javax.ws.rs-api-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jcommander-1.48.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-client-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-common-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-container-grizzly2-http-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-entity-filtering-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-guava-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-media-jaxb-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-media-json-jackson-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/jersey-server-2.25.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/morfologik-fsa-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/morfologik-fsa-builders-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/morfologik-stemming-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/morfologik-tools-2.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/opennlp-brat-annotator-1.7.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/opennlp-morfologik-addon-1.7.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/opennlp-tools-1.7.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/osgi-resource-locator-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/apache-opennlp-1.7.1/lib/validation-api-1.1.0.Final.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

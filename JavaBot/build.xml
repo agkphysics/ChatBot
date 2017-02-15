@@ -20,7 +20,7 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
 
 <project name="CBR Chat Bot" default="jar-nodeps">
 
-    <property name="bot.version" value="2.1"/>
+    <property name="bot.version" value="2.3"/>
     
     <property name="src.dir" value="src"/>
     <property name="lib.dir" value="lib"/>
@@ -35,7 +35,9 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
 
     <path id="classpath">
         <fileset dir="${lib.dir}">
-            <include name="*.jar"/>
+            <include name="**/*.jar"/>
+            <exclude name="**/*javadoc*"/>
+            <exclude name="**/*source*"/>
         </fileset>
         <pathelement path="${build.dir}/bin"/>
     </path>
@@ -47,7 +49,6 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
     </target>
 
     <target name="build" depends="header" description="Build classes">
-        <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.dir}/bin"/>
 
         <echo>Compiling files...</echo>
@@ -55,12 +56,19 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
             <src path="${src.dir}"/>
             <classpath refid="classpath"/>
         </javac>
+        
+        <copy todir="${build.dir}/bin">
+            <fileset dir="${src.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="package-all" depends="zip,jar-includedeps,jar-nodeps" description="Performs zip, jar-nodeps and jar-includedeps"/>
     
     <target name="jar-includedeps" depends="build" description="Build a jarfile containing the model and WordNet dictionary">
         <echo>Copying included files...</echo>
+        <mkdir dir="${build.dir}/lib"/>
         <copy todir="${build.dir}/lib">
             <fileset dir="${lib.dir}">
                 <include name="gate-EN-twitter.model"/>
@@ -91,19 +99,22 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
                 <attribute name="Main-Class" value="agk.chatbot.ChatBot"/>
             </manifest>
         </jar>
-    </target> 
+    </target>
     
-    <target name="zip" depends="jar-includedeps" description="Package all required files into a single ZIP file">
+    <fileset dir="${lib.dir}" id="requiredlibs">
+        <include name="**/*.jar" />
+        <exclude name="**/*javadoc*"/>
+        <exclude name="**/*source*"/>
+    </fileset>
+    
+    <target name="zip" depends="jar-nodeps" description="Package all required files into a single ZIP file">
         <echo>Copying required libraries...</echo>
         <copy todir="${build.dir}/lib">
-            <fileset dir="${lib.dir}">
-                <include name="**/*.jar" />
-                <exclude name="**/*javadoc*"/>
-                <exclude name="**/*source*"/>
-            </fileset>
+            <fileset refid="requiredlibs"></fileset>
         </copy>
 
         <echo>Copying XML's</echo>
+        <mkdir dir="${build.dir}/xmlconv"/>
         <copy todir="${build.dir}/xmlconv">
             <fileset dir="${xml.dir}">
                 <include name="**/*" />
@@ -117,7 +128,7 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
             <fileset dir="${build.dir}">
                 <include name="lib/**"/>
                 <include name="xmlconv/**"/>
-                <include name="JavaBot.jar"/>
+                <include name="JavaBot-nodeps.jar"/>
             </fileset>
         </zip>
     </target>
@@ -147,9 +158,7 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
             </fileset>
         </copy>
         <copy todir="${build.dir}/web/WEB-INF/classes">
-            <fileset dir="${build.dir}/bin">
-                <include name="**/*.class"/>
-            </fileset>
+            <fileset dir="${build.dir}/bin"/>
             <fileset dir="${lib.dir}">
                 <include name="gate-EN-twitter.model"/>
                 <include name="wn.dict"/>
@@ -159,8 +168,11 @@ along with CBR Chat Bot.  If not, see <http://www.gnu.org/licenses/>.
     
     <target name="deploy-web" depends="web" description="Deploy to local Tomcat webserver">
         <echo>Deploying to webserver...</echo>
-        <copy todir="${web.deploy.dir}" verbose="true">
+        <copy todir="${web.deploy.dir}">
             <fileset dir="${build.dir}/web"/>
+        </copy>
+        <copy todir="${web.deploy.dir}/WEB-INF/lib" flatten="true">
+            <fileset refid="requiredlibs"></fileset>
         </copy>
     </target>
 

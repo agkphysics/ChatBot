@@ -1,7 +1,7 @@
 ## processXML.py - Script for processing the XMLs from the talkbank corpus
 ##
 ## Copyright (C) 2017 Aaron Keesing
-## Version: 2.1
+## Version: 2.3
 
 
 import xmltodict
@@ -22,7 +22,7 @@ import re
 class TagChunker(nltk.ChunkParserI):
     def __init__(self, chunk_tagger):
         self._chunk_tagger = chunk_tagger
- 
+
     def parse(self, tokens):
         # split words and part of speech tags
         (words, tags) = zip(*tokens)
@@ -50,10 +50,10 @@ class FileProcessor():
     
     def processFile(self, file):
         utters, id = self.processFileFunc(file)
-        utters = self.processUtterFunc(utters, self.tagger, self.debug)
+        sents = self.processUtterFunc(utters, self.tagger, self.debug)
         
         if self.writeout:
-            FileProcessor.writexml(utters, id, 'conv_' + id + '.xml', self.outputDir)
+            FileProcessor.writexml(sents, id, 'conv_' + id + '.xml', self.outputDir)
     
     @staticmethod
     def writexml(utters, id, filename, outputDir):
@@ -68,9 +68,12 @@ class FileProcessor():
         }
 
         for utter in utters:
-            u = {'t': []}
-            for t in utter:
-                u['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': t[3]})
+            u = {'s': []}
+            for sent in utter:
+                s = {'t': []}
+                for t in sent:
+                    s['t'].append({'@pos': t[1], '#text': t[0], '@stem': t[2], '@ner': t[3]})
+                u['s'].append(s)
             tree['conversation']['u'].append(u)
         
         #print(xmltodict.unparse(tree, pretty=True))
@@ -94,7 +97,7 @@ def stanfordProcess(utters, tagger=None, debug=False):
                 'ner.model': 'edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz',
                 'outputFormat': 'json'
             })
-            processed.append([(tok['word'], tok['pos'], tok['lemma'], tok['ner']) for tok in annot['sentences'][0]['tokens']])
+            processed.append([[(tok['word'], tok['pos'], tok['lemma'], tok['ner']) for tok in sent['tokens']] for sent in annot['sentences']])
     except Exception:
         print("Unable to connect to Stanford CoreNLP server. Make sure it is running at http://localhost:9000/")
         print("You can start the server with the command: java -mx1000m edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000")
@@ -102,66 +105,71 @@ def stanfordProcess(utters, tagger=None, debug=False):
 
     return processed
 
-
 def nltkProcess(utters, tagger, debug=False):
     if not isinstance(tagger, nltk.tag.TaggerI):
         raise TypeError("Argument 'tagger' is type {} must be of type {}".format(type(tagger), nltk.TaggerI))
-
-    tokenizedUtters = [nltk.word_tokenize(utter) for utter in utters]
-
-    #taggedUtters = nltk.pos_tag_sents(tokenizedUtters)
-    taggedUtters = tagger.tag_sents(tokenizedUtters)
-    # Assume each unknown tag is a proper noun
-    taggedUtters = [[(w, t) if t else (w, 'NNP') for w, t in utter] for utter in taggedUtters]
     
-    stemmer = nltk.stem.snowball.EnglishStemmer()
-    stemmedUtters = [[(w, t, stemmer.stem(w)) for w, t in utter] for utter in taggedUtters]
-
+    processedUtters = []
     if debug:
         print()
         print('Utterances:')
         for utter in utters[:20]:
             print(utter)
         print('...')
+        print()
+    
+    for utter in utters:
+        sents = nltk.sent_tokenize(utter)
+        processedSents = []
+        for sent in sents:
+            tokens = nltk.word_tokenize(sent)
 
-        print()
-        print('Tagged utterances:')
-        for utter in taggedUtters[:20]:
-            print(' '.join([nltk.tuple2str(tok) for tok in utter]))
-            print()
-        print('...')
-    
-    neTags = list(nltk.ne_chunk_sents(taggedUtters))
-    if debug:
-        print()
-        print('NE tags:')
-        for utter in neTags[:10]:
-            print(utter)
-        print('...')
-    
-    for i in range(len(neTags)):
-        utter = neTags[i]
-        k = 0
-        for j in range(len(utter)):
-            tok = utter[j]
-            if isinstance(tok, nltk.Tree):
-                for _ in range(len(tok)):
-                    w, t, s = stemmedUtters[i][k]
-                    stemmedUtters[i][k] = (w, t, s, tok.label())
+            #taggedSent = nltk.pos_tag(tokens)
+            taggedSent = tagger.tag(tokens)
+            # Assume each unknown tag is a proper noun
+            taggedSent = [(w, t) if t else (w, 'NNP') for w, t in taggedSent]
+            
+            stemmer = nltk.stem.snowball.EnglishStemmer()
+            stemmedTags = [(w, t, stemmer.stem(w)) for w, t in taggedSent]
+
+            if debug:
+                print('Tagged sentence:')
+                print(' '.join([nltk.tuple2str(tok) for tok in taggedSent]))
+                print()
+            
+            neTags = list(nltk.ne_chunk(taggedSent))
+            if debug:
+                print('NE tags:')
+                for tag in neTags[:20]:
+                    print(tag)
+                print('...')
+                print()
+                print()
+            
+            k = 0
+            for i in range(len(neTags)):
+                tag = neTags[i]
+                if isinstance(tag, nltk.Tree):
+                    for _ in range(len(tag)):
+                        w, t, s = stemmedTags[k]
+                        stemmedTags[k] = (w, t, s, tag.label())
+                        k += 1
+                else:
+                    w, t, s = stemmedTags[k]
+                    stemmedTags[k] = (w, t, s, 'O')
                     k += 1
-            else:
-                w, t, s = stemmedUtters[i][k]
-                stemmedUtters[i][k] = (w, t, s, 'O')
-                k += 1
+            
+            processedSents.append(stemmedTags)
+        processedUtters.append(processedSents)
     
-    return stemmedUtters
+    return processedUtters
 
 
 def joinSentence(tokens):
-    PUNCTUATION = set(',.?;-\'"')
+    PUNCTUATION = set(',.?;%!')
     outStr = ""
     for tok in tokens:
-        if tok not in PUNCTUATION:
+        if tok not in PUNCTUATION and "'" not in tok:
             outStr += ' '
         outStr += tok
     
@@ -180,6 +188,8 @@ def isBad(word):
 
     if word.startswith('-') or word.endswith('-'):
         return True
+    elif word == '':
+        return True
     for pat in badPatterns:
         if pat.match(word):
             return True
@@ -187,8 +197,8 @@ def isBad(word):
 def removeBadWords(words):
     words = list(chain(*[w.split('_') for w in words]))
     words = [re.sub(r'[^A-Za-z0-9)(,.?!$%&;:\'"]', '', w) for w in words]
-    words = [w for w in words if not isBad(w)]
     words = [re.sub(r'([A-Za-z])\1\1+', r'\1\1', w) for w in words]
+    words = [w for w in words if not isBad(w)]
 
     return words
 
@@ -220,7 +230,17 @@ def processTBFile(filename):
                             words.append(w['#text'])
                     else:
                         words.append(w)
-
+                if 't' in utter:
+                    ttype = utter['t']['@type']
+                else:
+                    ttype = 'p'
+                if ttype == 'q':
+                    t = '?'
+                elif ttype == 'e':
+                    t = '!'
+                else:
+                    t = '.'
+                words.append(t)
                 words = removeBadWords(words)
 
                 if len(words) > 0:
@@ -249,12 +269,13 @@ def processANCFile(filename):
     utters = []
     with open(filename, encoding='utf8') as f:
         xmlDoc = xmltodict.parse(f.read(), encoding='utf-8')
-        for turn in xmlDoc['cesDoc']['body']['turn']:
+        for utter in xmlDoc['cesDoc']['body']['turn']:
+            currentUtter = []
             sents = []
-            if isinstance(turn['u'], list):
-                sents = turn['u']
+            if isinstance(utter['u'], list):
+                sents = utter['u']
             else:
-                sents = [turn['u']]
+                sents = [utter['u']]
             for u in sents:
                 if 'u' in u:
                     if isinstance(u['u'], list):
@@ -263,7 +284,7 @@ def processANCFile(filename):
                         us = [u['u']]
                 else:
                     us = [u]
-                utter = []
+                sent = []
                 for ut in us:
                     toks = []
                     if 'tok' in ut:
@@ -273,12 +294,17 @@ def processANCFile(filename):
                             toks = [ut['tok']]
                         for tok in toks:
                             if not isBad(tok['#text']):
-                                utter.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
-                if len(utter) > 0:
-                    utters.append(utter)
+                                sent.append((tok['#text'], tok['@msd'], tok['@base'], 'O'))
+                if len(sent) > 0:
+                    currentUtter.append(sent)
+            if len(currentUtter) > 0:
+                utters.append(currentUtter)
     
     return (utters, os.path.basename(filename))
 
+
+def processIdent(utters, tagger, debug):
+    return utters
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -365,9 +391,10 @@ def main():
         DEBUG = bool(args.print)
         CHUNK = bool(args.chunk)
         STANFORD = bool(args.stanford)
+        outputDir = args.outputdir
+        print("Output directory: '{}'".format(outputDir))
 
-        if args.outputdir:
-            outputDir = args.outputdir
+        if outputDir:
             WRITEOUT = True
             if not os.path.exists(outputDir):
                 os.makedirs(name=outputDir)
@@ -392,17 +419,18 @@ def main():
             processfilefunc = processTwitterFile
         elif args.anc:
             processfilefunc = processANCFile
-            processUtterFunc = lambda x: x
+            processUtterFunc = processIdent # No processing necessary for OANC
         else:
             raise Exception("Type of file(s) not specified")
+        
         
         processor = FileProcessor(processfilefunc, processUtterFunc, DEBUG, WRITEOUT, outputDir)
         if not STANFORD:
             processor.tagger = tagger
             processor.chunker = chunker
-
+        
         if os.path.isdir(infile):
-            files = [str(p) for p in Path(infile).glob('**/*.xml')]
+            files = filter(lambda x: x.endswith('.xml') or x.endswith('.txt'), (str(p) for p in Path(infile).rglob('*.*')))
             # Do tree concurrently
             with ProcessPoolExecutor() as executor:
                 for file in files:

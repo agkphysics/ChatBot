@@ -8,5 +8,10 @@ The required files are:
     - Stanford CoreNLP and its dependencies
         available at http://stanfordnlp.github.io/CoreNLP
         Also need the GATE Twitter model (gate-EN-twitter.model), available from https://gate.ac.uk/wiki/twitter-postagger.html
+    - OpenNLP and its dependencies
+        availabe at http://opennlp.apache.org/download.html
+        The models are to be places in the src/opennlp-models directory
+    - JWI
+        available at http://projects.csail.mit.edu/jwi/
     - Apache Commons IO
         available at http://commons.apache.org/proper/commons-io/

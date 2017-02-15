@@ -9,3 +9,5 @@ xmlconv/
 typings/
 *.json
 gate-EN-twitter.model
+opennlp-models/
+libsrc/
