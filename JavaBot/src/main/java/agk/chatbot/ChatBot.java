@@ -155,7 +155,7 @@ public class ChatBot implements StandardCBRApplication {
         if (p != null && Files.exists(p)) {
             corpusPath = p;
         } else {
-            String[] locations = { "xmlconv", "lib/xmlconv", "xml", "xmlcorpus" };
+            String[] locations = { "xmlconv/", "lib/xmlconv/", "xml/", "xmlcorpus/" };
             for (String loc : locations) {
                 URL xmlURL = ChatBot.class.getClassLoader().getResource(loc);
                 if (xmlURL != null) {
@@ -169,6 +169,9 @@ public class ChatBot implements StandardCBRApplication {
                     } catch (URISyntaxException e) {
                         e.printStackTrace();
                     }
+                } else if (Files.exists(Paths.get(loc))) {
+                    corpusPath = Paths.get(loc);
+                    break;
                 }
             }
             if (corpusPath == null) throw new FileNotFoundException("No valid corpus path given or found.");
