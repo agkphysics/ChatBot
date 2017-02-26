@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<!--
+ jCOLIBRI2 framework. 
+ Juan A. Recio-García.
+ GAIA - Group for Artificial Intelligence Applications
+ http://gaia.fdi.ucm.es
+ Universidad Complutense de Madrid
+-->
+</head>
+
+<body>
+Textual similarity functions for the KNN method.
+<p>
+<p>Some of them can be only be applied to <b>IEText</b> objects (or its subclasses) because require information stored in the tokens:</p>
+<center>
+<table border="2" cellpadding="10" cellspacing="2">
+ <tr>
+    <td><b>Cosine</b></td>
+    <td><a href="CosineCoefficient.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.CosineCoefficient</a></td>
+    <td rowspan="4"><img src="textualsim.jpg" border="0"></td>
+  </tr>
+  <tr>
+    <td><b>Dice</b></td>
+    <td><a href="DiceCoefficient.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.DiceCoefficient</a></td>
+  </tr>
+  <tr>
+    <td><b>Jaccard</b></td>
+    <td><a href="JaccardCoefficient.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.JaccardCoefficient</a></td>
+  </tr>
+  <tr>
+    <td><b>Overlap</b></td>
+    <td><a href="OverlapCoefficient.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.OverlapCoefficient</a></td>
+  </tr>
+</table>
+</center>
+
+<p>There is a similarity function that uses Apache Lucene to compare texts. This function can be applied to any Text subclass as not require any kind of extracted information</p>
+
+<center>
+<table border="2" cellpadding="10" cellspacing="2">
+ <tr>
+    <td><b>LuceneTextSimilarity</b></td>
+    <td><a href="LuceneTextSimilarity.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.LuceneTextSimilarity</a></td>
+  </tr>
+</table>
+</center>
+
+<p>Finally, the compressionbased package stores some similarity measures using compression implemented by Derek Bridge.</p>
+
+<center>
+<table border="2" cellpadding="10" cellspacing="2">
+ <tr>
+    <td><b>CompressionBased</b></td>
+    <td><a href="compressionbased/CompressionBased.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.compressionbased.CompressionBased</a></td>
+ </tr>
+ <tr>
+    <td><b>NormalisedCompression</b></td>
+    <td><a href="compressionbased/NormalisedCompression.html">jcolibri.method.retrieve.KNNretrieval.similarity.local.textual.compressionbased.NormalisedCompression</a></td>
+ </tr>
+</table>
+</center>
+
+<p>Tests 13 and 16 show how to use these similarity measures.</p>
+
+</body>
+
+</html>

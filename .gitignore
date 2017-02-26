@@ -1,13 +1,6 @@
-bin/
-*.class
-obj/
-lib/
-build/
 .vscode/
 .settings/
 xmlconv/
 typings/
 *.json
-gate-EN-twitter.model
-opennlp-models/
-libsrc/
+target/

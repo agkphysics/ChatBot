@@ -1,7 +1,7 @@
 ## processXML.py - Script for processing the XMLs from the talkbank corpus
 ##
 ## Copyright (C) 2017 Aaron Keesing
-## Version: 2.3
+## Version: 2.3.5
 
 
 import xmltodict
