@@ -789,11 +789,6 @@
 			<locationURI>PROJECT_LOC/lib/jcolibri2/spamcorpus.jar</locationURI>
 		</link>
 		<link>
-			<name>web/WEB-INF/lib/stanford-corenlp-3.7.0-models.jar</name>
-			<type>1</type>
-			<locationURI>PROJECT_LOC/lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0-models.jar</locationURI>
-		</link>
-		<link>
 			<name>web/WEB-INF/lib/stanford-corenlp-3.7.0.jar</name>
 			<type>1</type>
 			<locationURI>PROJECT_LOC/lib/stanford-corenlp-3.7.0/stanford-corenlp-3.7.0.jar</locationURI>

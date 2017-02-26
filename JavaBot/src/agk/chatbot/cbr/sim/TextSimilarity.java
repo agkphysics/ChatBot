@@ -82,8 +82,6 @@ public class TextSimilarity implements LocalSimilarityFunction {
     public static void init() throws Exception {
         try {
             if (Files.exists(Paths.get("wordnet/dict"))) init(new File("wordnet/dict").toURI().toURL());
-            else if (Files.exists(Paths.get("../../wordnet/dict")))
-                init(new File("../../wordnet/dict").toURI().toURL());
             else if (Files.exists(Paths.get("lib/wn.dict"))) init(new File("lib/wn.dict").toURI().toURL());
             else if (Files.exists(Paths.get("wn.dict"))) init(new File("wn.dict").toURI().toURL());
             else init(TextSimilarity.class.getClassLoader().getResource("wn.dict"));

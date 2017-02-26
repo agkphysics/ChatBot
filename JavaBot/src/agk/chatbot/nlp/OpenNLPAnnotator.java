@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 import opennlp.tools.namefind.*;
-//import opennlp.tools.parser.*;
 import opennlp.tools.postag.*;
 import opennlp.tools.sentdetect.*;
 import opennlp.tools.stemmer.Stemmer;
@@ -47,7 +46,6 @@ public class OpenNLPAnnotator implements BotNLPAnnotator {
     private TokenNameFinder locationNER;
     private TokenNameFinder organisationNER;
     private Stemmer stemmer;
-//    private Parser parser;
     private boolean initialised = false;
 
     /**
@@ -83,9 +81,7 @@ public class OpenNLPAnnotator implements BotNLPAnnotator {
                 organisationNER = new NameFinderME(nerModel);
     
                 stemmer = new SnowballStemmer(SnowballStemmer.ALGORITHM.ENGLISH);
-    
-//                ParserModel parserModel = new ParserModel(new FileInputStream("opennlp-models/en-parser-chunking.bin"));
-//                parser = ParserFactory.create(parserModel);
+
                 initialised = true;
     
                 System.out.println("Loaded OpenNLP tools");
