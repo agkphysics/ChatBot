@@ -7,6 +7,14 @@ user. It is a summer project I worked on while studying at the University of
 Auckland, over the 2016-2017 holidays.
 
 
+## Binaries
+See [releases](https://github.com/agkphysics/ChatBot/releases) to download
+binaries for the console only and Tomcat webapp.
+
+A build using [Apache Maven](http://maven.apache.org/) is available on the
+[`maven`](https://github.com/agkphysics/ChatBot/tree/maven) branch.
+
+
 ## Installation
 ### Dependencies
 See the respective README.txt file in JavaBot/lib for instructions on how to
@@ -30,8 +38,8 @@ It is suggested to use the command
 `java -mx1g edu.stanford.nlp.pipeline.StanfordCoreNLPServer 9000`
 to start the CoreNLP server instance.
 
-The python packages `xmltodict`, `pycorenlp` and `nltk` are also required and can be
-installed with `pip install xmltodict pycorenlp nltk`.
+The python packages `xmltodict`, `pycorenlp` and `nltk` are also required and
+can be installed with `pip install xmltodict pycorenlp nltk`.
 
 The script is able to process the Microsoft Research Twitter corpus,
 [TalkBank](http://talkbank.org/ "TalkBank") XML files, and
