@@ -5,9 +5,8 @@ lib/
 build/
 .vscode/
 .settings/
+.gradle/
 xmlconv/
 typings/
 *.json
-gate-EN-twitter.model
-opennlp-models/
 libsrc/

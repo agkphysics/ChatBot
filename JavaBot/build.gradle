@@ -1,0 +1,53 @@
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+    dependencies {
+        classpath 'org.akhikhl.gretty:gretty:1.4.0'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'war'
+apply plugin: 'org.akhikhl.gretty'
+
+repositories {
+    jcenter()
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    compile group: 'org.apache.commons', name: 'commons-vfs2', version: '2.1'
+    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.7.2'
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+    compile group: 'org.json', name: 'json', version: '20170516'
+    compile group: 'info.debatty', name: 'java-string-similarity', version: '0.21'
+    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.7.0'
+    compile group: 'edu.mit', name: 'jwi', version: '2.4.0'
+}
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.8
+version = '2.4.0'
+mainClassName = 'agk.chatbot.ChatBot'
+
+jar {
+    exclude('xmlconv/')
+    manifest {
+        attributes 'Implementation-Title': 'CBR Chatbot',
+                   'Implementation-Version': version,
+                   'Main-Class': mainClassName
+    }
+}
+
+gretty {
+    httpPort = 8080
+    contextPath = '/'
+    servletContainer = 'jetty9'
+}
