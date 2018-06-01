@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, 2017 Aaron Keesing
+ * Copyright (C) 2016-2018 Aaron Keesing
  *
  * This file is part of CBR Chat Bot.
  *
@@ -105,8 +105,10 @@ public class TextSimilarity implements LocalSimilarityFunction {
      * {@link TextSimilarity#wnSimilarity(String, String, POS)}.
      *
      * @param url
-     *            the URL to either the file <code>wn.dict</code> or the WordNet
-     *            DB.
+     *                the URL to either the file <code>wn.dict</code> or the WordNet
+     *                DB
+     * @param inMemory
+     *                whether the dictionary will be loaded into memory or not
      */
     public static void init(URL url, boolean inMemory) throws Exception {
         if (dict == null) {
@@ -171,9 +173,9 @@ public class TextSimilarity implements LocalSimilarityFunction {
      * @param w2
      *            a non-empty string
      * @param pos1
-     *            the first word's part of speech tag, a {@link POS} object.
+     *            the first word's part of speech tag, a {@link POS} object
      * @param pos2
-     *            the second word's part of speech tag, a {@link POS} object.
+     *            the second word's part of speech tag, a {@link POS} object
      * @return the similarity score for the two words, in the range [0, 1]
      */
     public static double wnSimilarity(String w1, String w2, POS pos1, POS pos2) {
@@ -354,6 +356,7 @@ public class TextSimilarity implements LocalSimilarityFunction {
             }
         } else { // Different parts of speech. Can only compare via derived
                  // form.
+            // TODO: Implement this.
             for (IWordID w1ID : w1idx.getWordIDs()) {
                 for (IWordID w2ID : w2idx.getWordIDs()) {
                     ISynset w1Synset = dict.getSynset(w1ID.getSynsetID());

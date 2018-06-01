@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, 2017 Aaron Keesing
+ * Copyright (C) 2016-2018 Aaron Keesing
  *
  * This file is part of CBR Chat Bot.
  *
@@ -20,5 +20,4 @@
 /**
  * This package is the main package for the chat bot application.
  */
-
 package agk.chatbot;

@@ -51,3 +51,7 @@ gretty {
     contextPath = '/'
     servletContainer = 'jetty9'
 }
+
+javadoc {
+    source = 'src/main/java/agk'
+}

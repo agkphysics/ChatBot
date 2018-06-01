@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, 2017 Aaron Keesing
+ * Copyright (C) 2016-2018 Aaron Keesing
  *
  * This file is part of CBR Chat Bot.
  *
@@ -92,7 +92,7 @@ public class NLPText extends Text {
     }
 
     /**
-     * @param s
+     * @param s the sentence to add
      */
     public void addSentence(NLPSentence s) {
         sentences.add(s);

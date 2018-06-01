@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016, 2017 Aaron Keesing
+ * Copyright (C) 2016-2018 Aaron Keesing
  *
  * This file is part of CBR Chat Bot.
  *
@@ -42,6 +42,9 @@ import jcolibri.method.retrieve.NNretrieval.similarity.global.Average;
  */
 public class ChatBot implements StandardCBRApplication {
 
+    /**
+     * A string representing the current version of the chat bot.
+     */
     public static final String VERSION = "2.4.0";
 
     /**
